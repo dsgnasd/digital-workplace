@@ -1000,6 +1000,63 @@ function seed(){
       ai:{llm:'gigachat', isolation:'standard', sources:['team','kb']}, start:'2026-02-02', end:'2026-07-31', status:'closed',
       history:[{d:'2026-01-20',t:'Создан черновик'},{d:'2026-01-23',t:'Утверждён руководителем ЦК'},{d:'2026-02-02',t:'Проект запущен, команда приступила к работе'},{d:'2026-07-31',t:'Проект завершается. Заявки на отзыв доступов созданы'},{d:'2026-08-03',t:'Все доступы отозваны — проект закрыт'}]})
   ];
+  // архив и параллельные проекты — система работает с весны 2025
+  const pms=emps.filter(e=>e.role==='pm'&&e.id!=='e6').map(e=>e.id);
+  const pool={}; emps.filter(e=>+e.id.slice(1)>=16).forEach(e=>(pool[e.role]??=[]).push(e.id)); const ptr={};
+  const take=role=>{const a=pool[role]; ptr[role]=(ptr[role]??0); return a[(ptr[role]++)%a.length]};
+  const OPT={ba:['llm','dbeaver','miro'],be:['idea','aide','pycharm','dbeaver','postman'],fe:['vscode','figma','aide'],qa:['postman','llm','dbeaver'],des:['miro','llm'],ops:['vscode','aide']};
+  const COMP=['ba','be','fe','qa','be','ops','des','be','fe','qa','ba','be'];
+  // код, название, заказчик, модель, руководитель (e6 или индекс), статус, старт, окончание, размер команды, LLM, формат связи
+  const X=[
+    ['ALTAIR','Альтаир — интернет-банк для малого бизнеса','АО «Финтраст»','bank',0,'closed','2025-03-03','2025-10-31',7,'onprem','bot'],
+    ['BRIZ','Бриз — сайт туристического оператора','ООО «Морской бриз»','corp','e6','closed','2025-04-14','2025-09-26',4,'gigachat','channel'],
+    ['ZENIT','Зенит — портал госуслуг региона','Агентство цифровых сервисов области','gov',1,'closed','2025-05-12','2026-03-31',8,'onprem','channel'],
+    ['IRIS','Ирис — HR-портал сотрудников','Внутренний','internal',2,'closed','2025-06-02','2025-12-19',4,'gigachat','channel'],
+    ['KASKAD','Каскад — биллинг энергосбыта','ПАО «Городские сети»','corp',3,'closed','2025-07-07','2026-05-29',7,'yagpt','email'],
+    ['LIRA','Лира — мобильное приложение клиники','АО «МедЛайн»','corp','e6','closed','2025-09-01','2026-04-30',5,'gigachat','bot'],
+    ['NEPTUN','Нептун — учёт судовых грузов','ООО «Транслайн Карго»','corp',4,'closed','2025-10-06','2026-06-26',6,'gigachat','channel'],
+    ['OMEGA','Омега — скоринг заявок на кредит','ПАО «Кредит Сибири»','bank',0,'closed','2025-11-10','2026-08-28',6,'onprem','bot'],
+    ['PULSAR','Пульсар — платформа программ лояльности','ООО «Северный ритейл»','corp',1,'active','2025-12-01','2027-02-26',9,'gigachat','bot'],
+    ['SATURN','Сатурн — личный кабинет инвестора','АО «Инвестфонд Восток»','bank',2,'active','2026-01-19','2027-01-29',7,'onprem','bot'],
+    ['TITAN','Титан — складская логистика','ООО «Логистик Плюс»','corp',3,'active','2026-02-16','2026-12-25',6,'yagpt','channel'],
+    ['URAN','Уран — электронный документооборот','Фонд региональных программ','gov',4,'active','2026-03-02','2027-06-30',8,'onprem','channel'],
+    ['FENIKS','Феникс — витрина отчётности для руководства','Внутренний','internal','e6','active','2026-03-23','2027-03-31',4,'gigachat','channel'],
+    ['CERERA','Церера — агроаналитика урожайности','ООО «Агропромсервис»','corp',0,'active','2026-04-13','2027-04-30',5,'gigachat','email'],
+    ['ELEKTR','Электра — диспетчерская городского транспорта','Агентство городского транспорта','gov',1,'active','2026-05-18','2027-05-31',7,'onprem','channel'],
+    ['YUPITER','Юпитер — интеграция с маркетплейсами','ООО «Северный ритейл»','corp',2,'active','2026-06-15','2027-01-29',5,'gigachat','bot'],
+    ['YANTAR','Янтарь — антифрод для карточных операций','АО «Финтраст»','bank',3,'active','2026-07-20','2027-07-30',6,'onprem','bot'],
+    ['AVRORA','Аврора — сервис записи к врачу','АО «МедЛайн»','corp',4,'active','2026-08-24','2027-03-31',5,'yagpt','channel'],
+    ['GIPER','Гиперион — платформа внутреннего обучения','Внутренний','internal',0,'active','2026-09-14','2027-02-26',4,'yagpt','channel'],
+    ['MAYAK','Маяк — мониторинг инфраструктуры','Внутренний','internal',1,'active','2026-10-05','2027-04-30',3,'gigachat','channel'],
+    ['DELTA','Дельта — модернизация АБС','ПАО «Кредит Сибири»','bank',2,'closing','2025-12-15','2026-11-06',6,'onprem','bot'],
+    ['KASSI','Кассиопея — портал поставщика','АО «Городские сети»','corp',3,'provisioning','2026-11-23','2027-06-30',5,'gigachat','channel'],
+    ['GALAKT','Галактика — каталог образовательных курсов','Фонд региональных программ','gov',4,'pending','2026-12-14','2027-08-31',5,'onprem','channel'],
+    ['VEKTOR','Вектор — автоматизация закупок','Внутренний','internal',0,'draft','2027-01-11','2027-06-30',3,'gigachat','channel']
+  ];
+  const REPS={bank:['Владелец продукта со стороны банка · product@client.example','Специалист ИБ банка · @sec.client'],corp:['Менеджер проекта заказчика · pm@client.example']};
+  X.forEach(([code,name,client,model,pmk,status,start,end,size,llm,fmt],i)=>{
+    const cic=model==='bank'||model==='corp', team=COMP.slice(0,size).map((r,j)=>{const o=OPT[r].filter((t,k)=>(i+j+k)%3===0); if(model==='bank'&&r==='ops') o.push('vpn'); return mk(take(r),r,[...new Set(o)])});
+    const lc=code.toLowerCase(), H_=[], ad=(d,t)=>H_.push({d,t});
+    const d0=addDays(start,-24), today_=today();
+    ad(d0,'Создан черновик'); if(status!=='draft') ad(addDays(start,-20),'Отправлен на утверждение');
+    if(!['draft','pending'].includes(status)) ad(addDays(start,-16),'Утверждён руководителем ЦК');
+    if(['ready','active','closing','closed'].includes(status)) ad(addDays(start,-3),'Все заявки выполнены — рабочие места готовы');
+    if(['active','closing','closed'].includes(status)) ad(start,'Проект запущен, команда приступила к работе');
+    const reviews=[]; let last=null;
+    if(['active','closing','closed'].includes(status)){
+      const stop=status==='closed'?end:today_; let r=addDays(start,REVIEW_DAYS-(i%9));
+      while(r<stop){const rev=(i+reviews.length)%3===0?1:0, kept=size*4-rev; reviews.push({d:r,by:reviews.length%2?'Руководитель ЦК':'Руководитель проекта',kept,revoked:rev}); ad(r,`Пересмотр доступов: подтверждено ${kept}${rev?`, отозвано ${rev}`:''}`); last=r; r=addDays(r,REVIEW_DAYS-(i%7))}
+      if(size>5&&status!=='closed'&&reviews.length) ad(addDays(start,40),'Добавлен участник: заявки на выдачу доступов созданы');
+    }
+    if(status==='closing'||status==='closed') ad(end,'Проект завершается. Заявки на отзыв доступов созданы');
+    if(status==='closed') ad(addDays(end,3),'Все доступы отозваны — проект закрыт');
+    H_.sort((a,b)=>a.d<b.d?-1:1);
+    const acks={}; if(['active','closing','ready'].includes(status)) team.forEach((m,j)=>{if(j%5!==4) acks[m.emp]={method:addDays(start,j%2), ...(cic||model==='gov'?{security:addDays(start,j%3)}:{})}});
+    projects.push(P_({id:'x'+(i+1), code, name, client, model, pm:pmk==='e6'?'e6':pms[pmk%pms.length],
+      clientInComms:cic, commFormat:cic?fmt:'channel', clientReps:cic?REPS[model]:[], channels:fmt==='email'||!cic?ch(lc,false):ch(lc,true),
+      team, ai:{llm, isolation:model==='bank'||model==='gov'?'strict':'standard', sources:cic&&fmt!=='email'?['team','client','repo','kb']:['team','repo','kb']},
+      start, end, status, history:H_, reviews, lastReview:last, acks}));
+  });
   // история версий шаблонов ролей (демо)
   const VH={
     ba:[['2026-02-10','Первая версия шаблона'],['2026-06-03','«Моделер BPMN»: опциональный → обязательный'],['2026-09-18','«ИИ-шлюз (LLM)»: не используется → опциональный']],
@@ -1014,7 +1071,7 @@ function seed(){
   // по какой версии шаблона собраны идущие проекты (старые проекты — по прошлым версиям)
   const verAt=(rid,date)=>{const vs=roles.find(r=>r.id===rid).versions.filter(x=>x.d<=date); return vs.length?vs[vs.length-1].v:1};
   projects.forEach(p=>{ if(['draft','pending','returned'].includes(p.status)) return; p.tplVer=Object.fromEntries(p.team.map(m=>[m.role,verAt(m.role,p.start)])); p.modelV=1 });
-  const s = {tools, roles, emps, projects, models:defaultModels(), tickets:[], seq:100};
+  const s = {tools, roles, emps, projects, models:defaultModels(), tickets:[], seq:100, demoV:2};
   S = s; // справочники нужны генераторам заявок
   const H=36e5, now=Date.now();
   projects.forEach(p=>{
@@ -1026,6 +1083,7 @@ function seed(){
     } else ts.forEach(t=>t.status='done');
     const ag=['s1','s2','s3']; ts.forEach((t,i)=>{ if(t.status!=='new') t.assignee=ag[i%3]; if(t.status==='done') t.doneAt=Date.parse(p.status==='provisioning'?today():p.start)-(i%5+1)*36e5*6 });
     if(p.status==='closed') genRevoke(s,p,p.team,'full').forEach((t,i)=>{t.status='done'; t.assignee=ag[i%3]; t.doneAt=Date.parse(p.end)+(i%4+1)*36e5*5});
+    if(p.status==='closing') genRevoke(s,p,p.team,'full').forEach((t,i)=>{if(i%3){t.status='done'; t.assignee=ag[i%3]; t.doneAt=Date.parse(p.end)+(i%4+1)*36e5*3} else {t.at=now-(i%2?50:6)*H}});
   });
   // вопрос поддержки по заявке «Веги»
   const qt=s.tickets.find(t=>t.pid==='p2'&&t.tool==='figma'&&t.status!=='done');
@@ -1576,7 +1634,7 @@ function tGroup(g){
   const head=g.key==='setup'
     ?`<div class="avatar" aria-hidden="true">${ic('settings-2')}</div><div class="who"><b>Настройка проекта</b><span>Каналы, репозитории, ИИ-контур, безопасность</span></div>`
     :`<div class="avatar" aria-hidden="true">${initials(E(g.emp).name)}</div><div class="who"><b>${esc(E(g.emp).name)}</b><span>${esc(R(E(g.emp).role).name)}</span></div>`;
-  const mass=ui.role==='support'&&open.length>1?`<button class="btn sm pri" data-act="tkgrp" data-ids="${open.map(t=>t.id).join(',')}">${ic('check-check')}${g.key==='setup'?'Выполнить':'Выдать'} все (${open.length})</button>`:'';
+  const mass=ui.role==='support'&&open.length>1?`<button class="btn sm pri" data-act="tkgrp" data-ids="${open.map(t=>t.id).join(',')}">${ic('check-check')}${g.key==='setup'?'Выполнить':open.every(t=>t.op==='revoke')?'Отозвать':open.some(t=>t.op==='revoke')?'Выполнить':'Выдать'} все (${open.length})</button>`:'';
   return `<div class="tgroup"><div class="tg-h">${head}<span class="cnt-open">${open.length?`открыто ${open.length} из ${g.ts.length}`:'всё выполнено'}</span>${mass}</div>${g.ts.map(tRow).join('')}</div>`;
 }
 function pTickets(p){
@@ -2568,6 +2626,11 @@ try{S=JSON.parse(localStorage.getItem(KEY))}catch(e){}
 if(!S||!S.tools) S=seed();
 if(!S.models) S.models=defaultModels(); S.models.forEach(modelNorm);
 S.projects.forEach(p=>{if(!['draft','pending','returned'].includes(p.status)) p.modelV??=1});
+// миграция демо-данных v2: архив и параллельные проекты добавляются к сохранённым данным, правки пользователя не трогаем
+if((S.demoV||1)<2){const cur=S, fresh=seed(); S=cur;
+  fresh.projects.filter(p=>p.id.startsWith('x')&&!S.projects.some(q=>q.id===p.id||q.code===p.code)).forEach(p=>{
+    S.projects.push(p); fresh.tickets.filter(t=>t.pid===p.id).forEach(t=>S.tickets.push({...t,id:'SD-'+(++S.seq)}))});
+  S.demoV=2; try{localStorage.setItem(KEY,JSON.stringify(S))}catch(e){}}
 // миграция старых данных: единый термин «ИИ»
 S.tools.forEach(t=>t.name=t.name.replace(/^AI-/,'ИИ-')); S.roles.forEach(r=>r.method=r.method.replace(/AI-/g,'ИИ-'));
 S.roles.forEach(r=>{r.versions??=[{v:1,d:'2026-02-10',by:'Руководитель ЦК',ch:'Первая версия шаблона'}]; r.v??=r.versions.length});
