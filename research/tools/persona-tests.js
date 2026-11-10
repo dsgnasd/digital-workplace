@@ -243,6 +243,20 @@ task('T27','P1','Запретить GigaChat в модели «Корпорат�
   notes.push('Затронуты: '+off.map(p=>p.code).join(', ')+'; в карточке модели: '+inCard+'; в «Требует внимания»: '+inAttn+'; в паспорте метка «есть v'+m.v+'»: '+badge);
   return {ok:off.length>0&&inCard&&inAttn&&badge};
 });
+task('T28','P1','Подготовить черновик модели, опубликовать с предпросмотром, привести проект в соответствие и найти запись в журнале',(step,notes)=>{
+  login('ck'); go('models'); step(1);
+  const m=S.models.find(x=>x.id==='corp');
+  m.draft={name:m.name, desc:m.desc, comms:m.comms, formats:m.formats, llms:m.llms.filter(k=>k!=='gigachat'), defLlm:'yagpt', isolation:m.isolation, dlp:m.dlp, ch:'ИБ запретила GigaChat', d:today()}; save(); render(); step(5);
+  const draftShown=html().includes('Черновик v2'), stillV1=m.v===1&&m.llms.includes('gigachat');
+  A.mdlPub({dataset:{id:'corp'}}); step(2);
+  const vg=S.projects.find(p=>p.code==='VEGA'); const before=modelViolations(vg).length;
+  login('pm'); A.open({dataset:{id:vg.id}}); go('project'); step(2); const fixBtn=html().includes('Привести в соответствие');
+  A.mdlFix({dataset:{id:vg.id}}); step(2);
+  login('ck'); go('audit'); ui.ap='all'; ui.atype='model'; ui.aq=''; step(2); const inAudit=auditRows().some(r=>r.type==='model'&&r.text.includes('v2'));
+  const used=S.projects.some(p=>p.model==='corp'&&p.status!=='closed');
+  notes.push('Черновик виден: '+draftShown+', правила до публикации не менялись: '+stillV1+'; после публикации у VEGA нарушений: '+before+', после «Привести в соответствие»: '+modelViolations(vg).length+' (LLM → '+vg.ai.llm+'); в журнале: '+inAudit);
+  return {ok:draftShown&&stillV1&&m.v===2&&before>0&&fixBtn&&modelViolations(vg).length===0&&vg.modelV===2&&inAudit&&used};
+});
 require('fs').writeFileSync(require('path').join(__dirname,'persona-results.json'),JSON.stringify(results,null,2));
 results.forEach(r=>console.log(r.id,r.persona,r.result.padEnd(9),'шагов:',String(r.steps).padStart(2),'|',r.title));
 `);
