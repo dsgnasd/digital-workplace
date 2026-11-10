@@ -111,7 +111,7 @@ textarea{width:100%;min-height:84px;resize:vertical;line-height:1.5}
 .statline{display:grid;grid-template-columns:repeat(4,1fr);border-top:1px solid var(--ink);border-bottom:1px solid var(--line)}
 .statline>div{padding:16px 18px 14px;border-left:1px solid var(--line)}
 .statline>div:first-child{border-left:0;padding-left:0}
-.statline .v{font:600 34px/1 var(--display);letter-spacing:-.02em}
+.statline .v{font:600 34px/1 var(--display);letter-spacing:-.02em;font-variant-numeric:tabular-nums}
 .statline .l{color:var(--muted);font-size:13.5px;margin-top:8px}
 .statline .v.alert{color:var(--red)}
 
@@ -370,11 +370,37 @@ ol.doc-box.rules{padding-left:32px;display:grid;gap:6px}
 
 /* --- уведомления --- */
 .bell-wrap{position:relative;flex:none}
-.bell{width:38px;height:38px;border:1px solid var(--line-strong);border-radius:var(--r-m);background:var(--surface);color:var(--ink-2);display:grid;place-items:center;cursor:pointer;position:relative}
-.bell:hover{border-color:var(--muted)}
-.bell[aria-expanded="true"]{border-color:var(--accent);box-shadow:0 0 0 3px var(--accent-soft)}
-.bell svg.lucide{width:18px;height:18px}
-.bell-n{position:absolute;top:-6px;right:-6px;min-width:18px;height:18px;padding:0 5px;border-radius:9px;background:var(--red);color:#fff;font:600 11px/18px var(--ui);text-align:center;border:2px solid var(--paper)}
+.bell,.gear{width:38px;height:38px;border:1px solid var(--line-strong);border-radius:var(--r-m);background:var(--surface);color:var(--ink-2);display:grid;place-items:center;cursor:pointer;position:relative}
+.bell:hover,.gear:hover{border-color:var(--muted)}
+.bell[aria-expanded="true"],.gear[aria-expanded="true"]{border-color:var(--accent);box-shadow:0 0 0 3px var(--accent-soft)}
+.bell svg.lucide,.gear svg.lucide{width:18px;height:18px}
+.bell-n{position:absolute;top:-7px;right:-7px;min-width:20px;height:20px;padding:0 5px;box-sizing:border-box;border-radius:10px;background:var(--red);color:#fff;font:600 11px/1 var(--ui);font-variant-numeric:tabular-nums;display:grid;place-items:center;border:2px solid var(--paper)}
+.gear-wrap{position:relative;flex:none}
+.gear svg.lucide{transition:transform .5s cubic-bezier(.34,1.56,.64,1)}
+.gear:hover svg.lucide{transform:rotate(60deg)}
+.gear[aria-expanded="true"] svg.lucide{transform:rotate(120deg)}
+.gear-pop{position:absolute;right:0;top:calc(100% + 8px);width:320px;max-width:calc(100vw - 32px);background:var(--surface);border:1px solid var(--line-strong);border-radius:var(--r-m);box-shadow:0 14px 36px rgba(15,27,45,.18);z-index:70;padding:14px;transform-origin:top right}
+.gp-label{font-size:12.5px;color:var(--muted);margin:0 2px 8px}
+.seg{--i:0;position:relative;display:grid;grid-template-columns:repeat(3,1fr);padding:3px;border-radius:10px;background:var(--surface-2);border:1px solid var(--line)}
+.seg-pill{position:absolute;top:3px;bottom:3px;left:3px;width:calc((100% - 6px)/3);border-radius:7px;background:var(--surface);box-shadow:0 1px 2px rgba(15,27,45,.12),0 0 0 1px var(--line-strong);transform:translateX(calc(var(--i)*100%));transition:transform .32s cubic-bezier(.34,1.3,.64,1)}
+.seg button{position:relative;z-index:1;border:0;background:none;display:flex;flex-direction:column;align-items:center;gap:5px;padding:9px 4px 8px;border-radius:7px;color:var(--muted);font:500 12.5px/1.2 var(--ui);cursor:pointer;transition:color .2s}
+.seg button:hover{color:var(--ink)}
+.seg button[aria-checked="true"]{color:var(--accent)}
+.seg button svg.lucide{width:18px;height:18px;transition:transform .45s cubic-bezier(.34,1.56,.64,1)}
+.seg button[aria-checked="true"] svg.lucide{transform:rotate(-12deg) scale(1.12)}
+.seg button[data-t="light"][aria-checked="true"] svg.lucide{transform:rotate(90deg) scale(1.12)}
+@media (prefers-reduced-motion: no-preference){.gear-pop{animation:gpin .22s cubic-bezier(.2,.9,.3,1.2)}@keyframes gpin{from{opacity:0;transform:translateY(-6px) scale(.96)}to{opacity:1;transform:none}}}
+@media (prefers-reduced-motion: reduce){.gear svg.lucide,.seg-pill,.seg button svg.lucide{transition:none}}
+::view-transition-old(root),::view-transition-new(root){animation:none;mix-blend-mode:normal}
+@media (prefers-reduced-motion: no-preference){
+  .bell svg.lucide{transform-origin:50% 8%}
+  .bell:hover svg.lucide,.bell[aria-expanded="true"] svg.lucide{animation:ring .9s cubic-bezier(.36,.07,.19,.97)}
+  @keyframes ring{0%{transform:rotate(0)}12%{transform:rotate(16deg)}26%{transform:rotate(-14deg)}40%{transform:rotate(10deg)}54%{transform:rotate(-7deg)}68%{transform:rotate(4deg)}82%{transform:rotate(-2deg)}100%{transform:rotate(0)}}
+  .bell:hover .bell-n{animation:nbump .5s cubic-bezier(.34,1.56,.64,1)}
+  @keyframes nbump{0%{transform:scale(1)}40%{transform:scale(1.22)}100%{transform:scale(1)}}
+  .notif-pop{animation:gpin .22s cubic-bezier(.2,.9,.3,1.2);transform-origin:top right}
+}
+@media (max-width:640px){.gear-wrap,.bell-wrap{position:static}.gear-pop,.notif-pop{position:fixed;left:16px;right:16px;top:72px;width:auto;max-width:none}}
 .notif-pop{position:absolute;right:0;top:calc(100% + 8px);width:min(380px,calc(100vw - 32px));background:var(--surface);border:1px solid var(--line-strong);border-radius:var(--r-m);box-shadow:0 14px 36px rgba(15,27,45,.18);z-index:70;overflow:hidden}
 .np-h{display:flex;align-items:center;justify-content:space-between;padding:12px 14px;border-bottom:1px solid var(--line)}
 .np-list{max-height:min(420px,70vh);overflow:auto}
@@ -397,15 +423,6 @@ ol.doc-box.rules{padding-left:32px;display:grid;gap:6px}
 .tpl-diff{display:flex;align-items:center;gap:10px;flex-wrap:wrap;padding:10px 20px;background:var(--amber-soft);color:var(--ink-2);font-size:13.5px;border-bottom:1px solid var(--line)}
 .tpl-diff>svg.lucide{color:var(--amber);width:16px;height:16px}
 .tpl-diff>span{flex:1;min-width:220px}
-
-/* --- «Как это работает»: сетка шагов --- */
-.flow.steps-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px}
-.flow.steps-grid .arr{display:none}
-.flow.steps-grid .node{min-width:0;text-align:left}
-.flow.steps-grid .node b{flex-direction:column;align-items:flex-start;gap:8px;margin-bottom:6px}
-.flow.steps-grid .node b svg.lucide{width:20px;height:20px}
-@media (max-width:1100px){.flow.steps-grid{grid-template-columns:repeat(2,minmax(0,1fr))}}
-@media (max-width:520px){.flow.steps-grid{grid-template-columns:1fr}}
 
 /* --- раунд 3: исполнитель, меню «Ещё» --- */
 .tassign{display:flex;align-items:center;gap:4px;margin-top:3px;color:var(--ink-2);font-size:12.5px}
@@ -471,21 +488,8 @@ details.vers>summary{padding:12px 20px;font-size:14px}
 .dp-link:hover{background:var(--accent-soft)}
 
 /* --- переключатель темы --- */
-.theme-sw{display:inline-flex;gap:2px;border:1px solid var(--line-strong);border-radius:var(--r-m);padding:2px;background:var(--surface)}
-.theme-sw button{border:0;background:none;width:32px;height:30px;border-radius:6px;display:grid;place-items:center;color:var(--muted);cursor:pointer}
-.theme-sw button:hover{color:var(--ink);background:var(--surface-2)}
-.theme-sw button[aria-checked="true"]{background:var(--accent-soft);color:var(--accent)}
-.theme-sw svg.lucide{width:16px;height:16px}
-aside .theme-sw{background:transparent;border-color:var(--side-on)}
-aside .theme-sw button{color:var(--side-mute)}
-aside .theme-sw button:hover{color:var(--side-ink);background:var(--side-on)}
-aside .theme-sw button[aria-checked="true"]{background:var(--side-on);color:var(--accent-2)}
 /* низ сайдбара: тема + сброс, в сетке меню */
 aside .side-foot{margin-top:auto;padding:14px 0 0;border-top:1px solid var(--side-on);display:grid;gap:8px;font-size:14px}
-aside .sf-label{font-size:12.5px;color:var(--side-mute);padding:0 10px}
-aside .theme-sw{display:grid;grid-template-columns:repeat(3,1fr);gap:2px;padding:3px;border:0;border-radius:var(--r-m);background:rgba(255,255,255,.045)}
-aside .theme-sw button{width:auto;height:32px;border-radius:6px}
-aside .theme-sw button[aria-checked="true"]{background:var(--side-on);color:var(--accent-2);box-shadow:0 1px 2px rgba(0,0,0,.25)}
 aside .side-reset{color:var(--side-mute);margin-top:2px}
 aside .side-reset:hover{color:var(--side-ink)}
 
@@ -970,6 +974,27 @@ function readiness(p, emp){
 function notify(role,text,pid,o={}){(S.notifs??=[]).push({id:'N'+(++S.seq),role,user:o.user,text,pid,tab:o.tab,ic:o.ic,at:o.at||Date.now(),read:!!o.read})}
 function myNotifs(){return (S.notifs||[]).filter(n=>n.role===ui.role&&(!n.user||n.user===ui.session?.user)).sort((a,b)=>b.at-a.at).slice(0,30)}
 function ago(at){const m=Math.round((Date.now()-at)/6e4); return m<1?'только что':m<60?`${m} мин назад`:m<1440?`${Math.round(m/60)} ч назад`:`${Math.round(m/1440)} дн назад`}
+const THEMES=[['system','monitor','Системная'],['light','sun','Светлая'],['dark','moon','Тёмная']];
+function gearPanel(){
+  const i=Math.max(0,THEMES.findIndex(t=>t[0]===ui.theme));
+  return `<div class="gear-pop" role="dialog" aria-label="Настройки"><div class="gp-label" id="gp-theme">Тема</div>
+  <div class="seg" role="radiogroup" aria-labelledby="gp-theme" style="--i:${i}"><span class="seg-pill" aria-hidden="true"></span>${THEMES.map(([k,ico,l])=>`<button type="button" role="radio" aria-checked="${ui.theme===k}" tabindex="${ui.theme===k?0:-1}" data-act="theme" data-t="${k}">${ic(ico)}<span>${l}</span></button>`).join('')}</div></div>`;
+}
+function setTheme(t,btn){
+  if(t===ui.theme) return;
+  ui.theme=t; try{localStorage.setItem(KEY+'-theme',t)}catch(_){}
+  const seg=document.querySelector('.gear-pop .seg');
+  if(seg){seg.style.setProperty('--i',THEMES.findIndex(x=>x[0]===t)); seg.querySelectorAll('[role=radio]').forEach(b=>{const on=b.dataset.t===t; b.setAttribute('aria-checked',on); b.tabIndex=on?0:-1})}
+  const reduce=matchMedia('(prefers-reduced-motion: reduce)').matches;
+  if(reduce||!document.startViewTransition){applyTheme(); return}
+  const g=(document.querySelector('.gear')||btn).getBoundingClientRect(), x=g.left+g.width/2, y=g.top+g.height/2;
+  const r=Math.hypot(Math.max(x,innerWidth-x),Math.max(y,innerHeight-y));
+  setTimeout(()=>{
+    const vt=document.startViewTransition(applyTheme);
+    vt.ready.then(()=>document.documentElement.animate({clipPath:[`circle(0 at ${x}px ${y}px)`,`circle(${r}px at ${x}px ${y}px)`]},{duration:560,easing:'cubic-bezier(.65,0,.35,1)',pseudoElement:'::view-transition-new(root)'})).catch(()=>{});
+  },200);
+}
+function closeGear(focus){ui.gear=false; document.querySelector('.gear-pop')?.remove(); const b=document.querySelector('.gear'); b?.setAttribute('aria-expanded','false'); if(focus) b?.focus({preventScroll:true})}
 function notifPanel(){
   const l=myNotifs(), unread=l.filter(n=>!n.read).length;
   return `<div class="notif-pop" role="dialog" aria-label="Уведомления"><div class="np-h"><b>Уведомления</b>${unread?`<button type="button" class="linkbtn small" data-act="nreadall">Прочитать все</button>`:''}</div>
@@ -1061,8 +1086,6 @@ function layout(){
     <nav aria-label="Разделы"><div class="nav-label">${esc(ROLES_UI[ui.role].t)}</div>
     ${nav}</nav>
     <div class="side-foot">
-      <div class="sf-label" id="sf-theme">Тема</div>
-      <div class="theme-sw" role="radiogroup" aria-labelledby="sf-theme">${[['system','monitor','Как в системе'],['light','sun','Светлая'],['dark','moon','Тёмная']].map(([k,i,l])=>`<button role="radio" aria-checked="${ui.theme===k}" aria-label="${l}" title="${l}" data-act="theme" data-t="${k}">${ic(i)}</button>`).join('')}</div>
       <button class="nav side-reset" data-act="reset" title="Данные прототипа хранятся в этом браузере">${ic('rotate-ccw')}<span>Сбросить демо-данные</span></button>
     </div>
   </aside>
@@ -1070,6 +1093,7 @@ function layout(){
     <header class="topbar">
       <button class="btn sm menu-toggle" data-act="menu" aria-label="Меню">${ic('menu')}</button>
       <h1>${title}</h1>
+      <div class="gear-wrap"><button type="button" class="gear" data-act="gear" aria-haspopup="dialog" aria-expanded="${!!ui.gear}" aria-label="Настройки" title="Настройки">${ic('settings')}</button>${ui.gear?gearPanel():''}</div>
       ${(()=>{const n=myNotifs().filter(x=>!x.read).length; return `<div class="bell-wrap"><button type="button" class="bell" data-act="bell" aria-haspopup="dialog" aria-expanded="${!!ui.bell}" aria-label="Уведомления${n?`: ${n} ${plural(n,'новое','новых','новых')}`:''}">${ic('bell')}${n?`<span class="bell-n" aria-hidden="true">${n}</span>`:''}</button>${ui.bell?notifPanel():''}</div>`})()}
       <div class="user-chip" title="Вы вошли как ${esc(ROLES_UI[ui.role].t.toLowerCase())}">
         <span class="uc-ic" aria-hidden="true">${ic(DEMO_USERS[ui.role].icon)}</span>
@@ -1172,15 +1196,6 @@ function vDashboard(){
   </div>
   ${(a=>a.length?`<div class="card"><div class="card-h"><h3>${ic('bell')}Требует внимания</h3><span class="small muted">${a.length}</span></div><ul class="attn">${a.map(x=>`<li class="${x.late?'late':''}">${ic(x.ic)}<span>${esc(x.t)}</span><button class="btn sm" data-act="open" data-id="${x.id}"${x.tab?` data-tab="${x.tab}"`:''}>Открыть</button></li>`).join('')}</ul></div>`:'')(attention())}
   <div class="card"><div class="card-h"><h3>${ic('folder-kanban')}Проекты</h3><div class="sp" style="flex:1"></div>${ui.role==='pm'?`<button class="btn pri sm" data-act="go" data-v="wizard">${ic('plus')}Новый проект</button>`:''}</div>${projBlock()}</div>
-  <details class="card fold"><summary>${ic('workflow')}Как это работает</summary><div class="card-b">
-    <div class="flow steps-grid">
-      <div class="node"><b>${ic('layers')}1. Руководитель ЦК</b>Шаблон рабочего места роли: обязательные и опциональные инструменты, методология</div><div class="arr">${ic('chevron-right')}</div>
-      <div class="node"><b>${ic('folder-kanban')}2. Руководитель проекта</b>Создаёт проект: модель заказчика, каналы, команда, ИИ-контур, дата старта</div><div class="arr">${ic('chevron-right')}</div>
-      <div class="node"><b>${ic('stamp')}3. Утверждение</b>Руководитель ЦК проверяет соответствие шаблонам</div><div class="arr">${ic('chevron-right')}</div>
-      <div class="node"><b>${ic('life-buoy')}4. Сервис-деск</b>Заявки на каналы, доступы, ключи ИИ-шлюза, DLP</div><div class="arr">${ic('chevron-right')}</div>
-      <div class="node"><b>${ic('rocket')}5. Работа</b>Смена состава, пересмотр доступов раз в квартал</div><div class="arr">${ic('chevron-right')}</div>
-      <div class="node"><b>${ic('archive')}6. Закрытие</b>Отзыв всех доступов, каналы и ключи — в архив</div>
-    </div></div></details>
   </div>`;
 }
 function vProjects(){
@@ -1862,6 +1877,14 @@ document.addEventListener('click',e=>{
   const nav=e.target.closest('[data-nav]'); if(nav){const c=new Date(dp.cur.getFullYear(),dp.cur.getMonth()+(+nav.dataset.nav),1); dp.cur=c; dpRender(); nav.dataset.nav==='-1'?dp.pop.querySelector('[data-nav="-1"]').focus():dp.pop.querySelector('[data-nav="1"]').focus(); return}
   const a=e.target.closest('[data-dp]'); if(a) return dpSet(a.dataset.dp==='today'?isoD(new Date()):'');
 });
+document.addEventListener('mousedown',e=>{if(ui.gear&&!e.target.closest?.('.gear-wrap')) closeGear()});
+document.addEventListener('keydown',e=>{
+  if(!ui.gear) return;
+  if(e.key==='Escape'){closeGear(true); return}
+  const seg=e.target.closest?.('.gear-pop .seg'); if(!seg||!['ArrowLeft','ArrowRight','ArrowUp','ArrowDown'].includes(e.key)) return;
+  e.preventDefault(); const bs=[...seg.querySelectorAll('[role=radio]')], k=bs.indexOf(e.target), d=(e.key==='ArrowRight'||e.key==='ArrowDown')?1:-1, nb=bs[(k+d+bs.length)%bs.length];
+  setTheme(nb.dataset.t,nb); nb.focus({preventScroll:true});
+});
 document.addEventListener('mousedown',e=>{if(ui.bell&&!e.target.closest?.('.bell-wrap')){ui.bell=false; document.querySelector('.notif-pop')?.remove(); document.querySelector('.bell')?.setAttribute('aria-expanded','false')}});
 document.addEventListener('keydown',e=>{if(e.key==='Escape'&&ui.bell){ui.bell=false; document.querySelector('.notif-pop')?.remove(); const b=document.querySelector('.bell'); b?.setAttribute('aria-expanded','false'); b?.focus({preventScroll:true})}});
 document.addEventListener('mousedown',e=>{if(dp&&!dp.pop.contains(e.target)&&!dp.btn.contains(e.target)) dpClose()});
@@ -1920,11 +1943,31 @@ function modal({title, body, ok='Готово', danger=false, onOk}){
 }
 
 /* ========= События ========= */
+/* главные цифры: счёт от нуля при входе на экран, от прежнего значения при изменении */
+let statMem={key:'',vals:[]}, statRaf=0;
+function countUp(){
+  if(typeof requestAnimationFrame!=='function'||typeof matchMedia!=='function') return;
+  const els=[...document.querySelectorAll('.statline .v')], key=ui.role+'|'+ui.view+'|'+(ui.pid||'');
+  const parsed=els.map(el=>{const m=el.textContent.match(/^(\D*?)(\d[\d\s\u00a0\u202f]*\d|\d)(.*)$/s); return m&&{el,pre:m[1],num:+m[2].replace(/\D/g,''),sep:/\D/.test(m[2]),post:m[3]}});
+  const prev=statMem.key===key?statMem.vals:[];
+  statMem={key,vals:parsed.map(p=>p?p.num:null)};
+  cancelAnimationFrame(statRaf);
+  if(!els.length||matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+  const jobs=parsed.map((p,i)=>p&&{...p,from:prev[i]??0,delay:prev.length?0:i*90}).filter(j=>j&&j.from!==j.num);
+  if(!jobs.length) return;
+  const fmt=(j,n)=>j.pre+(j.sep||j.num>=10000?nf(n):String(n))+j.post, dur=prev.length?600:1000, t0=performance.now();
+  jobs.forEach(j=>j.el.textContent=fmt(j,j.from));
+  const step=t=>{let live=false;
+    jobs.forEach(j=>{const k=Math.min(1,Math.max(0,(t-t0-j.delay)/dur)), e=1-Math.pow(1-k,4); j.el.textContent=fmt(j,Math.round(j.from+(j.num-j.from)*e)); if(k<1) live=true});
+    if(live) statRaf=requestAnimationFrame(step)};
+  statRaf=requestAnimationFrame(step);
+}
 function render(push){
   ddClose(); dpClose(); hideTip();
   if(!ui.session){ $('#app').innerHTML=loginView(); enhanceSelects(); icons(); return }
   const y=window.scrollY; $('#app').innerHTML=layout(); enhanceSelects(); enhanceDates(); icons(); window.scrollTo(0,y);
   if(ui.view==='wizard') wSyncErr();
+  countUp();
   saveWiz();
   if(push!==false) syncRoute();
 }
@@ -1953,7 +1996,8 @@ function applyModel(d,k){const m=CLIENT_MODELS[k]; d.model=k; d.clientInComms=m.
 const A={
   go:el=>go(el.dataset.v),
   menu:()=>{ui.menu=!ui.menu;render()},
-  theme:el=>{ui.theme=el.dataset.t; try{localStorage.setItem(KEY+'-theme',ui.theme)}catch(_){} applyTheme(); render(); document.querySelector(`[data-act="theme"][data-t="${ui.theme}"]`)?.focus()},
+  theme:el=>{setTheme(el.dataset.t,el); el.focus({preventScroll:true})},
+  gear:()=>{ui.gear=!ui.gear; ui.bell=false; render(); if(ui.gear) document.querySelector('.gear-pop [aria-checked="true"]')?.focus({preventScroll:true})},
   reset:()=>modal({title:'Сбросить демо-данные?', body:'<p>Проекты, заявки и шаблоны ролей вернутся к исходному состоянию. Это действие нельзя отменить.</p>', ok:'Сбросить', danger:true, onOk:()=>{S=seed();save();ui.wiz=null;go(ui.view==='project'?'projects':ui.view); toast('Демо-данные сброшены')}}),
   open:el=>{ui.pid=el.dataset.id; ui.tab=el.dataset.tab||'passport'; go('project')},
   tab:el=>{ui.tab=el.dataset.t; render()},
@@ -2000,7 +2044,7 @@ const A={
         if(p.status==='ready'&&t.op!=='revoke'){p.status='provisioning'} if(p.status==='closed'&&t.op==='revoke'){p.status='closing'}
         p.history.push({d:today(),t:`Заявка ${t.id} открыта повторно: ${v}`}); notify('pm',`Заявка ${t.id} на «${p.name}» открыта повторно: ${v}`,p.id,{user:p.pm,ic:'rotate-ccw',tab:'tickets'});
         save(); render(); toast(`Заявка ${t.id} снова в работе`)}})},
-  bell:()=>{ui.bell=!ui.bell; render(); if(ui.bell) document.querySelector('.np-item')?.focus({preventScroll:true})},
+  bell:()=>{ui.bell=!ui.bell; ui.gear=false; render(); if(ui.bell) document.querySelector('.np-item')?.focus({preventScroll:true})},
   nreadall:()=>{myNotifs().forEach(n=>n.read=true); save(); render(); document.querySelector('.bell')?.focus({preventScroll:true})},
   nopen:el=>{const n=(S.notifs||[]).find(x=>x.id===el.dataset.nid); if(!n) return; n.read=true; ui.bell=false; save();
     if(n.pid&&P(n.pid)){ui.pid=n.pid; ui.tab=n.tab||'passport'; go('project')} else render()},
