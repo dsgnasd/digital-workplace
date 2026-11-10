@@ -649,6 +649,32 @@ aside .demo .demo-b{color:var(--side-mute);flex-direction:column;align-items:fle
 .btn.red{background:var(--red);border-color:var(--red);color:#fff}
 @media (prefers-reduced-motion: no-preference){.modal{animation:mIn .16s ease-out}@keyframes mIn{from{opacity:0;transform:translateY(8px) scale(.98)}to{opacity:1;transform:none}}}
 
+.apr-h{display:flex;align-items:center;gap:12px;flex-wrap:wrap;padding:14px 20px;border-bottom:1px solid var(--line)}
+.apr-t{display:flex;align-items:baseline;gap:10px;flex:1;min-width:0}
+.apr-t h3{margin:0;font-size:16px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.apr-a{display:flex;gap:4px;flex:none}
+.apr-facts{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:16px;margin:0;padding:16px 20px}
+.apr-facts dt{font-size:12.5px;color:var(--muted);margin-bottom:3px}
+.apr-facts dd{margin:0;font-size:14.5px;color:var(--ink);font-weight:500}
+.apr-facts dd small{display:block;font-size:12.5px;color:var(--muted);font-weight:400;margin-top:2px}
+.apr-team{display:flex;align-items:center;gap:10px}
+.apr-av{display:flex}
+.apr-av i{font-style:normal;width:28px;height:28px;border-radius:50%;display:grid;place-items:center;font:600 10.5px/1 var(--ui);background:var(--accent-soft);color:var(--accent);border:2px solid var(--surface);margin-left:-8px}
+.apr-av i:first-child{margin-left:0}
+.apr-av i.more{background:var(--surface-2);color:var(--muted)}
+.apr-foot{display:flex;align-items:center;gap:12px 20px;flex-wrap:wrap;padding:12px 20px;border-top:1px solid var(--line);background:var(--surface-2);border-radius:0 0 var(--r-m) var(--r-m)}
+.apr-tk{display:flex;align-items:center;gap:8px 12px;flex-wrap:wrap;flex:1;min-width:0;font-size:13.5px;color:var(--ink-2)}
+.apr-tk>svg.lucide{width:16px;height:16px;color:var(--accent)}
+.apr-parts{display:flex;gap:4px 14px;flex-wrap:wrap;color:var(--muted)}
+.apr-parts b{color:var(--ink-2);font-weight:600}
+.apr-ok{display:inline-flex;align-items:center;gap:6px;font-size:13px;color:var(--ok);font-weight:500}
+.apr-ok svg.lucide{width:15px;height:15px}
+.apr-viol{display:flex;gap:10px;padding:12px 20px;background:var(--amber-soft);font-size:13.5px;color:var(--ink-2);border-top:1px solid var(--line);border-radius:0 0 var(--r-m) var(--r-m)}
+.apr-viol>svg.lucide{width:16px;height:16px;color:var(--amber);flex:none;margin-top:2px}
+.apr-viol ul{margin:4px 0 0;padding-left:18px}
+.apr:has(.apr-viol) .apr-foot{border-radius:0}
+@media (max-width:900px){.apr-facts{grid-template-columns:1fr 1fr}}
+@media (max-width:520px){.apr-a{width:100%}.apr-a .btn.pri{margin-left:auto}}
 .approve-sum{margin-top:14px;border:0;border-radius:var(--r-m);background:var(--surface-2);font-size:14px;color:var(--ink-2);overflow:hidden}
 .as-h{display:flex;align-items:center;gap:10px;padding:12px 14px 4px;color:var(--ink);font-weight:500}
 .as-h span{flex:1}
@@ -1745,10 +1771,11 @@ function vCatalog(){
     return `<tr><td><b>${esc(t.name)}</b>${t.added?` <span class="badge b-vio">новый</span>`:''}</td><td data-label="Категория">${TOOL_CATS[t.cat]}</td><td data-label="Кто выдаёт доступ" class="small muted">${esc(GROUPS[t.group])}</td><td data-label="SLA" class="small">${SLA_H[t.group]} ч</td><td data-label="В шаблонах ролей" class="small">${rs.map(r=>`${esc(r.name)}${r.req.includes(t.id)?' <b>*</b>':''}`).join(', ')||'<span class="faint">пока ни в одном</span>'}</td><td data-label="Проектов" class="small">${n||'—'}</td>${edit?`<td><button type="button" class="linkbtn small" data-act="tooledit" data-t="${t.id}" aria-label="Изменить: ${esc(t.name)}">Изменить</button></td>`:''}</tr>`}).join('')}
   </tbody></table></div></div><p class="faint small" style="margin:0">* — обязательный инструмент роли. Новый инструмент появится в шаблонах ролей со статусом «не используется».</p></div>`;
 }
-function approveSummary(p){
+function approveSummary(p,compact){
   const tmp={seq:0,tickets:[]}; const ts=genTickets(tmp,{...p,status:'pending'});
   const k=x=>ts.filter(t=>x.includes(t.kind)).length;
-  const parts=[[k(['access']),'key-round','Доступы к инструментам'],[k(['channel','client']),'messages-square','Каналы'],[k(['ai','bot']),'sparkles','ИИ-контур'],[k(['space','repo']),'git-branch','Трекер и репозитории'],[k(['sec']),'shield-check','Безопасность']].filter(x=>x[0]);
+  const parts=[[k(['access']),'key-round','Доступы к инструментам','доступ','доступа','доступов'],[k(['channel','client']),'messages-square','Каналы','канал','канала','каналов'],[k(['ai','bot']),'sparkles','ИИ-контур','ИИ','ИИ','ИИ'],[k(['space','repo']),'git-branch','Трекер и репозитории','трекер и репо','трекер и репо','трекер и репо'],[k(['sec']),'shield-check','Безопасность','ИБ','ИБ','ИБ']].filter(x=>x[0]);
+  if(compact) return `<div class="apr-tk">${ic('ticket')}<span><b>${ts.length} ${plural(ts.length,'заявка','заявки','заявок')}</b> в сервис-деск после утверждения</span><span class="apr-parts">${parts.map(([n,,,a,b,c])=>`<span><b>${n}</b> ${plural(n,a,b,c)}</span>`).join('')}</span></div>`;
   return `<div class="approve-sum"><div class="as-h">${ic('ticket')}<span>Заявки в сервис-деск после утверждения</span><b>${ts.length}</b></div>
   <ul class="as-list">${parts.map(([n,i,l])=>`<li>${ic(i)}<span>${l}</span><b>${n}</b></li>`).join('')}</ul></div>`;
 }
@@ -1758,15 +1785,17 @@ function vApprovals(){
   return `<div class="stack">${list.map(p=>{
     const viol=[]; p.team.forEach(m=>{const r=R(m.role); r.req.forEach(t=>{if(!m.tools.includes(t))viol.push(`${E(m.emp).name}: нет обязательного «${T(t).name}»`)}); m.tools.forEach(t=>{if(!r.req.includes(t)&&!r.opt.includes(t))viol.push(`${E(m.emp).name}: «${T(t).name}» вне шаблона роли`)})});
     viol.push(...modelViolations(p));
-    return `<div class="card"><div class="card-h"><h3>${esc(p.name)}</h3><span class="mono faint">${esc(p.code)}</span><div style="flex:1"></div>
-    <button class="btn sm" data-act="open" data-id="${p.id}">${ic('book-open')}Открыть паспорт</button><button class="btn sm danger" data-act="return" data-id="${p.id}">${ic('undo-2')}Вернуть</button><button class="btn sm ok" data-act="approve" data-id="${p.id}">${ic('stamp')}Утвердить</button></div>
-    <div class="card-b"><div class="grid g3">
-      <div><div class="faint small">Заказчик</div>${esc(p.client)}<div class="small muted">${esc(CLIENT_MODELS[p.model].name)}</div></div>
-      <div><div class="faint small">Команда</div>${p.team.map(m=>esc(E(m.emp).name)).join(', ')}</div>
-      <div><div class="faint small">Руководитель проекта</div>${esc(E(p.pm).name)}<div class="small muted">с ${fmtD(p.start)}</div></div>
-    </div>
-    ${approveSummary(p)}
-    <div style="margin-top:12px">${viol.length?`<div class="callout warn"><b>Отклонения от шаблонов:</b><br>${viol.map(esc).join('<br>')}</div>`:`<span class="badge b-vio">Соответствует шаблонам ролей и модели заказчика</span>`}</div></div></div>`}).join('')}</div>`;
+    const d=daysTo(p.start), n=p.team.length;
+    return `<div class="card apr"><div class="apr-h"><div class="apr-t"><h3>${esc(p.name)}</h3><span class="mono faint">${esc(p.code)}</span></div>
+      <div class="apr-a"><button class="btn sm ghost" data-act="open" data-id="${p.id}">${ic('book-open')}Паспорт</button><button class="btn sm ghost danger" data-act="return" data-id="${p.id}">${ic('undo-2')}Вернуть</button><button class="btn sm pri" data-act="approve" data-id="${p.id}">${ic('stamp')}Утвердить</button></div></div>
+    <dl class="apr-facts">
+      <div><dt>Заказчик</dt><dd>${esc(p.client||'—')}<small>${esc(CLIENT_MODELS[p.model].name)}</small></dd></div>
+      <div><dt>Руководитель проекта</dt><dd>${esc(E(p.pm).name)}</dd></div>
+      <div><dt>Старт</dt><dd>${fmtD(p.start)}<small>${d>0?`через ${d} ${plural(d,'день','дня','дней')}`:d===0?'сегодня':'дата прошла'}</small></dd></div>
+      <div><dt>Команда</dt><dd class="apr-team" title="${esc(p.team.map(m=>E(m.emp).name).join(', '))}"><span class="apr-av">${p.team.slice(0,4).map(m=>`<i>${initials(E(m.emp).name)}</i>`).join('')}${n>4?`<i class="more">+${n-4}</i>`:''}</span>${n} ${plural(n,'человек','человека','человек')}</dd></div>
+    </dl>
+    <div class="apr-foot">${approveSummary(p,true)}${viol.length?'':`<span class="apr-ok">${ic('circle-check')}Соответствует шаблонам и модели</span>`}</div>
+    ${viol.length?`<div class="apr-viol">${ic('triangle-alert')}<div><b>Отклонения: ${viol.length}</b><ul>${viol.map(v=>`<li>${esc(v)}</li>`).join('')}</ul></div></div>`:''}</div>`}).join('')}</div>`;
 }
 function deskList(){
   let list=S.tickets.slice();
