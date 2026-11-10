@@ -224,6 +224,15 @@ tr.click:hover td:first-child b{text-decoration:underline;text-decoration-color:
 .toast{position:fixed;right:24px;bottom:24px;background:var(--ink);color:var(--paper);padding:12px 18px;border-radius:var(--r-m);font-size:14px;z-index:50;box-shadow:0 8px 24px rgba(15,27,45,.25);transition:opacity .3s}
 .callout{border-left:3px solid var(--line-strong);background:var(--surface-2);padding:12px 16px;border-radius:0 var(--r-s) var(--r-s) 0;font-size:14px;color:var(--ink-2);max-width:88ch}
 .callout.warn{border-color:var(--amber);background:var(--amber-soft)}
+.ret{display:flex;align-items:center;gap:10px;padding:8px 8px 8px 14px;border-radius:var(--r-m);background:var(--amber-soft);font-size:13.5px;color:var(--ink-2);line-height:1.4}
+.ret>svg.lucide{width:16px;height:16px;color:var(--amber);flex:none}
+.ret-b{flex:1;min-width:0}
+.ret-b b{color:var(--ink);font-weight:600}
+.ret-hint{color:var(--muted)}
+.ret-a{display:flex;gap:4px;flex:none}
+.ret .btn.ghost{color:var(--ink)}
+.ret .btn.ghost:hover{background:color-mix(in srgb,var(--amber) 14%,transparent)}
+@media (max-width:760px){.ret{flex-wrap:wrap;padding:10px 12px}.ret-a{width:100%;justify-content:flex-end}}
 .matrix td,.matrix th{padding:9px 10px;text-align:center;font-size:13px}
 .matrix td:first-child,.matrix th:first-child{text-align:left}
 .st{display:inline-flex;align-items:center;justify-content:center;width:22px;height:22px;border-radius:var(--r-s);font-size:12px;font-weight:700;line-height:0;vertical-align:middle;flex:none}
@@ -1388,7 +1397,7 @@ function vProject(){
   const tl=steps.map((s,i)=>`<div class="tl ${i<cur?'done':i===cur?'cur':''}">${STATUS[s].t}</div>`).join('');
   const tabs=[['passport','Инструменты и правила','wrench'],['team','Команда и доступы','users'],['comms','Коммуникации','message-square'],['ai','ИИ-контур','sparkles'],['tickets','Заявки','inbox'],['history','История','clock']];
   let actions='';
-  if(isOwner(p)&&['draft','returned'].includes(p.status)) actions+=`<button class="btn" data-act="edit" data-id="${p.id}">${ic('pencil')}Редактировать</button><button class="btn pri" data-act="submit" data-id="${p.id}">${ic('send')}Отправить на утверждение</button>`;
+  if(isOwner(p)&&(p.status==='draft'||(p.status==='returned'&&!p.comment))) actions+=`<button class="btn" data-act="edit" data-id="${p.id}">${ic('pencil')}Редактировать</button><button class="btn pri" data-act="submit" data-id="${p.id}">${ic('send')}Отправить на утверждение</button>`;
   if(ui.role==='ck'&&p.status==='pending') actions+=`<button class="btn danger" data-act="return" data-id="${p.id}">${ic('undo-2')}Вернуть</button><button class="btn ok" data-act="approve" data-id="${p.id}">${ic('stamp')}Утвердить</button>`;
   const rvDue=['active','ready'].includes(p.status)&&daysTo(reviewDue(p))<=14;
   if((isOwner(p)||ui.role==='ck')&&rvDue) actions+=`<button class="btn" data-act="review" data-id="${p.id}">${ic('shield-check')}Пересмотреть доступы</button>`;
@@ -1404,7 +1413,10 @@ function vProject(){
   return `<div class="stack">
     <div class="passport-actions">${actions}</div>
     ${p.status==='ready'&&isOwner(p)?`<div class="callout">${ic('rocket')} Все заявки выполнены, рабочие места команды готовы. Запустите проект, когда команда приступит к работе.</div>`:''}
-    ${p.status==='returned'&&p.comment?`<div class="callout warn"><b>Руководитель ЦК вернул на доработку:</b> ${esc(p.comment)}</div>`:''}
+    ${p.status==='returned'&&p.comment?(()=>{const h=[...p.history].reverse().find(x=>x.t.startsWith('Возвращён')), own=isOwner(p);
+      return `<section class="ret" aria-label="Проект возвращён на доработку">${ic('undo-2')}
+      <div class="ret-b"><b>Вернули на доработку${h?` ${fmtD(h.d)}`:''}:</b> ${esc(p.comment)}${own?'':' <span class="ret-hint">Ждём исправлений от руководителя проекта.</span>'}</div>
+      ${own?`<div class="ret-a"><button class="btn sm ghost" data-act="edit" data-id="${p.id}">Исправить</button><button class="btn sm pri" data-act="submit" data-id="${p.id}">Отправить снова</button></div>`:''}</section>`})():''}
     <section class="passport" aria-label="Паспорт проекта">
       <div class="passport-top"><span class="emblem">${ic('book-user')}Паспорт проекта</span><span class="mono">№ ${esc(p.code)}-${esc(p.id.replace(/\D/g,'').slice(-4).padStart(4,'0'))}</span></div>
       <div class="stamp ${press?'press':''} s-${p.status}">${esc(STATUS[p.status].t)}<small>${fmtD(lastH?.d)}</small></div>
