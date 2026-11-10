@@ -202,6 +202,17 @@ tr.click:hover td:first-child b{text-decoration:underline;text-decoration-color:
 .flow .arr{display:grid;place-items:center;color:var(--line-strong);padding:0 4px;font-size:16px}
 
 .kv{display:grid;grid-template-columns:190px 1fr;gap:10px 16px;font-size:14px;margin:0}
+.rules{list-style:none;margin:0;padding:4px 0}
+.rules li{display:grid;grid-template-columns:34px minmax(0,1fr) auto;align-items:center;gap:12px;padding:12px 20px}
+.rules li+li{border-top:1px solid var(--line)}
+.ru-ic{width:34px;height:34px;border-radius:9px;background:var(--surface-2);color:var(--accent);display:grid;place-items:center}
+.ru-ic svg.lucide{width:17px;height:17px}
+.ru-b{display:flex;flex-direction:column;gap:2px;min-width:0}
+.ru-l{font-weight:600;font-size:14.5px;display:flex;align-items:center;gap:2px}
+.ru-s{font-size:13px;color:var(--muted)}
+.ru-v{font-size:13px;font-weight:600;padding:3px 10px;border-radius:var(--r-s);background:var(--surface-2);color:var(--ink-2);white-space:nowrap}
+.ru-v.on{background:var(--accent-soft);color:var(--accent)}
+@media (max-width:520px){.rules li{grid-template-columns:34px minmax(0,1fr);padding:12px 16px}.ru-v{grid-column:2;justify-self:start}}
 .kv dt{color:var(--muted)}.kv dd{margin:0}
 .empty{padding:48px 24px;text-align:center;color:var(--muted)}
 .toast{position:fixed;right:24px;bottom:24px;background:var(--ink);color:var(--paper);padding:12px 18px;border-radius:var(--r-m);font-size:14px;z-index:50;box-shadow:0 8px 24px rgba(15,27,45,.25);transition:opacity .3s}
@@ -469,6 +480,28 @@ details.vers>summary{padding:12px 20px;font-size:14px}
 .vlist{list-style:none;margin:0;padding:6px 20px 14px;display:grid;gap:8px}
 .vlist li{display:grid;grid-template-columns:auto auto 1fr;gap:10px;align-items:baseline;font-size:14px}
 /* --- отчёт по ИИ: одна серия, один оттенок, неброские оси --- */
+.hm-wrap{display:flex;align-items:center;gap:20px 40px;flex-wrap:wrap}
+.hm-stats{display:grid;grid-template-columns:1fr;gap:14px;margin:0;flex:1;min-width:150px}
+.hm-stats dt{font-size:12.5px;color:var(--muted)}
+.hm-stats dd{margin:2px 0 0;font:600 22px/1.2 var(--display);font-variant-numeric:tabular-nums}
+.hm-stats dd.alert{color:var(--red)}
+.hm-stats dd.up{color:var(--ok)}
+.hm-stats dd small{font:500 12.5px var(--ui);color:var(--muted);margin-left:6px}
+.hm-stats:has(>div:nth-child(4)){grid-template-columns:1fr 1fr;gap:16px 24px}
+.hm{display:flex;flex-direction:column;gap:10px;width:max-content;max-width:100%}
+.hm-grid{display:grid;grid-template-columns:22px repeat(var(--cols),14px);grid-auto-rows:14px;gap:4px;font-size:11px;color:var(--muted);line-height:14px}
+.hm-grid>span{white-space:nowrap;overflow:visible}
+.hm-d{font-size:11px}
+.hm-c{display:block;width:14px;height:14px;border-radius:3px;background:var(--surface-2);box-shadow:inset 0 0 0 1px color-mix(in srgb,var(--ink) 6%,transparent)}
+.hm-c.l1{background:color-mix(in srgb,var(--accent) 22%,var(--surface))}
+.hm-c.l2{background:color-mix(in srgb,var(--accent) 45%,var(--surface))}
+.hm-c.l3{background:color-mix(in srgb,var(--accent) 70%,var(--surface))}
+.hm-c.l4{background:var(--accent)}
+.hm-c.fut{background:none;box-shadow:none}
+.hm-grid .hm-c:not(.fut):hover{outline:2px solid var(--ink-2);outline-offset:1px}
+.hm-legend{display:flex;align-items:center;gap:4px;font-size:11.5px;color:var(--muted);align-self:flex-end}
+.hm-legend .hm-c{width:11px;height:11px;border-radius:2px}
+.hm-legend .hm-c:first-child{margin-left:4px}.hm-legend .hm-c:last-child{margin-right:4px}
 .chart{width:100%;height:auto;display:block;overflow:visible}
 .ch-grid{stroke:var(--line);stroke-width:1}
 .ch-grid-f{fill:var(--line)}
@@ -1311,13 +1344,15 @@ function pPassport(p){
   const m=CLIENT_MODELS[p.model];
   const allTools=[...new Set(p.team.flatMap(x=>x.tools))];
   const byCat={}; allTools.forEach(t=>{(byCat[T(t).cat]??=[]).push(t)});
-  return `<div class="grid g2">
-    <div class="card"><div class="card-h"><h3>Правила по модели «${esc(m.name)}»</h3></div><div class="card-b"><dl class="kv">
-      <dt>Изоляция контекста${tip(TIPS.isolation)}</dt><dd>${esc(ISOLATION[p.ai.isolation].split(' — ')[0])}</dd>
-      <dt>Заказчик в коммуникациях</dt><dd>${p.clientInComms?'Да — '+esc(COMM_FORMATS[p.commFormat]):'Нет'}</dd>
-      <dt>LLM</dt><dd>${esc(LLMS[p.ai.llm])}</dd>
-      <dt>DLP${tip(TIPS.dlp)}</dt><dd>${m.dlp?'Обязателен':'Не требуется'}</dd>
-    </dl></div></div>
+  const [isoV,isoS]=ISOLATION[p.ai.isolation].split(' — '), llm=LLMS[p.ai.llm], lm=llm.match(/^(.*?)\s*\((.*)\)$/);
+  const rules=[
+    ['lock','Изоляция контекста',TIPS.isolation,isoV,isoS,p.ai.isolation==='strict'],
+    ['users','Заказчик в коммуникациях','',p.clientInComms?'Да':'Нет',p.clientInComms?COMM_FORMATS[p.commFormat]:'Только внутренняя команда',p.clientInComms],
+    ['sparkles','Языковая модель','',lm?lm[1]:llm,lm?lm[2]:'',p.ai.llm!=='none'],
+    ['shield-check','DLP',TIPS.dlp,m.dlp?'Обязателен':'Не требуется','Контроль утечек данных',m.dlp]];
+  return `<div class="grid g2" style="align-items:start">
+    <div class="card"><div class="card-h"><h3>${ic('scale')}Правила модели «${esc(m.name)}»</h3></div>
+      <ul class="rules">${rules.map(([i,l,t,v,sub,on])=>`<li><span class="ru-ic" aria-hidden="true">${ic(i)}</span><span class="ru-b"><span class="ru-l">${l}${t?tip(t):''}</span>${sub?`<span class="ru-s">${esc(sub[0].toUpperCase()+sub.slice(1))}</span>`:''}</span><span class="ru-v ${on?'on':''}">${esc(v)}</span></li>`).join('')}</ul></div>
     <div class="card"><div class="card-h"><h3>${ic('wrench')}Инструментарий проекта</h3></div><div class="card-b">
       ${Object.entries(byCat).map(([c,ts])=>`<div style="margin-bottom:8px"><div class="faint small">${TOOL_CATS[c]}</div>${ts.map(t=>`<span class="chip">${esc(T(t).name)}</span>`).join('')}</div>`).join('')||'<span class="muted">Команда не назначена</span>'}
     </div></div>
@@ -1367,15 +1402,16 @@ function pAI(p){
   if(p.ai.llm==='none') return `<div class="card card-b"><div class="callout warn">Для проекта ИИ-ассистенты запрещены моделью заказчика.</div></div>`;
   const users=p.team.filter(m=>m.tools.some(t=>['llm','aide'].includes(t))).map(m=>esc(E(m.emp).name));
   const au=aiUsage(p), r4=au.weeks.slice(-4).reduce((a,b)=>a+b,0), b4=au.blocked.pd+au.blocked.sec+au.blocked.db;
-  const usage=au.weeks.some(Boolean)?`<div class="card"><div class="card-h"><h3>${ic('chart-column')}Использование за 8 недель</h3><div style="flex:1"></div><span class="small muted">${nf(r4)} запросов за 4 недели · ${au.users} ${plural(au.users,'пользователь','пользователя','пользователей')} · заблокировано ${b4}</span></div><div class="card-b">${barChart(au.weeks,{h:150})}</div></div>`:'';
-  return `<div class="stack">${usage}<div class="card"><div class="card-h"><h3>${ic('bot')}Как ИИ работает на этом проекте</h3></div><div class="card-b">
+  const usage=au.weeks.some(Boolean)?`<div class="card"><div class="card-h"><h3>${ic('chart-column')}Активность за 8 недель</h3></div><div class="card-b hm-wrap">${heatMap(au.weeks,{seed:p.id.length+p.code.length})}
+    <dl class="hm-stats"><div><dt>Запросов за 4 недели</dt><dd>${nf(r4)}</dd></div><div><dt>Пользуются ИИ</dt><dd>${au.users} ${plural(au.users,'человек','человека','человек')}</dd></div><div><dt>Заблокировано</dt><dd class="${b4?'alert':''}">${b4}</dd></div></dl></div></div>`:'';
+  return `<div class="stack"><div class="grid ${usage?'g2':''}" style="align-items:stretch">${usage}<div class="card"><div class="card-h"><h3>${ic('sparkles')}Как ИИ работает на этом проекте</h3></div><div class="card-b">
     <ul class="plain">
       <li>Сотрудники пользуются ИИ-ассистентами через общий шлюз компании. Модель: <b>${esc(LLMS[p.ai.llm])}</b>.</li>
       <li>Каждый запрос помечается тегом проекта, поэтому запросы разных проектов не смешиваются, даже если модель общая.</li>
       <li>Ассистент опирается только на материалы этого проекта: ${p.ai.sources.map(s=>SOURCES[s]).join(', ')}.</li>
       <li>Изоляция: ${esc(ISOLATION[p.ai.isolation].split(' — ')[0].toLowerCase())}${tip(TIPS.isolation)}</li>
       <li>Доступ к ИИ: ${users.join(', ')||'пока ни у кого из команды'}.</li>
-    </ul></div></div>
+    </ul></div></div></div>
   <details class="card fold"><summary>${ic('route')}Подробнее для инженеров</summary><div class="card-b">
     <div class="flow">
       <div class="node"><b>${ic('user-round')}Сотрудник</b>IDE / чат / трекер задач</div><div class="arr">${ic('chevron-right')}</div>
@@ -1737,15 +1773,25 @@ function aiUsage(p){
 }
 const nf=n=>n.toLocaleString('ru-RU');
 const weekLabel=i=>{const d=parseD(today()); d.setDate(d.getDate()-7*(WEEKS-1-i)-((d.getDay()+6)%7)); return `${pad2(d.getDate())}.${pad2(d.getMonth()+1)}`};
-// Столбчатая диаграмма одной серии: один оттенок, тонкие столбцы, подпись только у последнего и максимума
-function barChart(vals,{w=640,h=190,label='запросов'}={}){
-  const max=Math.max(1,...vals), top=Math.ceil(max/100)*100||100, pl=40, pb=24, pt=14, cw=(w-pl-8)/vals.length, bw=Math.min(36,cw-10);
-  const y=v=>pt+(h-pt-pb)*(1-v/top), mi=vals.indexOf(max);
-  const grid=[0,.5,1].map(f=>{const v=Math.round(top*f), yy=y(v); return `<line x1="${pl}" x2="${w-8}" y1="${yy}" y2="${yy}" class="ch-grid"/><text x="${pl-6}" y="${yy+4}" class="ch-ax" text-anchor="end">${nf(v)}</text>`}).join('');
-  const bars=vals.map((v,i)=>{const x=pl+i*cw+(cw-bw)/2, yy=y(v), hh=Math.max(0,h-pb-yy);
-    const show=(i===vals.length-1||i===mi)&&v>0;
-    return `<g class="ch-bar" tabindex="0" aria-label="Неделя с ${weekLabel(i)}: ${nf(v)} ${label}"><title>Неделя с ${weekLabel(i)}: ${nf(v)} ${label}</title><rect x="${pl+i*cw}" y="${pt}" width="${cw}" height="${h-pt-pb}" class="ch-hit"/>${hh>0?`<path d="M${x},${h-pb} V${yy+3} a3,3 0 0 1 3,-3 H${x+bw-3} a3,3 0 0 1 3,3 V${h-pb} Z" class="ch-fill"/>`:''}${show?`<text x="${x+bw/2}" y="${yy-5}" class="ch-val" text-anchor="middle">${nf(v)}</text>`:''}<text x="${x+bw/2}" y="${h-6}" class="ch-ax" text-anchor="middle">${weekLabel(i)}</text></g>`}).join('');
-  return `<svg class="chart" viewBox="0 0 ${w} ${h}" role="img" aria-label="Запросы к ИИ по неделям">${grid}<line x1="${pl}" x2="${w-8}" y1="${h-pb}" y2="${h-pb}" class="ch-base"/>${bars}</svg>`;
+// Тепловая карта по дням в стиле графика активности: недели — столбцы, дни недели — строки
+function heatMap(weeks,{label='запросов',seed=1}={}){
+  const DW=['Пн','Вт','Ср','Чт','Пт','Сб','Вс'], WT=[1.15,1.25,1.2,1.1,.95,.16,.08], now=parseD(today());
+  const h=k=>{let x=Math.sin(k*12.9898+seed*78.233)*43758.5453; return x-Math.floor(x)};
+  const cols=weeks.map((tot,i)=>{
+    const mon=parseD(today()); mon.setDate(mon.getDate()-7*(weeks.length-1-i)-((mon.getDay()+6)%7));
+    const days=DW.map((_,d)=>{const dt=new Date(mon); dt.setDate(mon.getDate()+d); return dt});
+    const w=days.map((dt,d)=>dt>now?0:WT[d]*(.7+h(i*7+d)*.6)), sw=w.reduce((a,b)=>a+b,0)||1;
+    const v=w.map(x=>Math.floor(tot*x/sw)); let r=tot-v.reduce((a,b)=>a+b,0);
+    w.map((x,d)=>[x,d]).sort((a,b)=>b[0]-a[0]).forEach(([x,d])=>{if(r>0&&x>0){v[d]++;r--}});
+    return days.map((dt,d)=>({dt,v:v[d],fut:dt>now}));
+  });
+  const max=Math.max(1,...cols.flat().map(c=>c.v)), lvl=v=>v?Math.min(4,1+Math.floor(v/max*3.999)):0;
+  const head=cols.map((c,i)=>`<span>${i%2===0?`${pad2(c[0].dt.getDate())}.${pad2(c[0].dt.getMonth()+1)}`:''}</span>`).join('');
+  const body=DW.map((dn,d)=>`<span class="hm-d">${d%2===0&&d<5?dn:''}</span>${cols.map(c=>{const x=c[d]; return x.fut?'<i class="hm-c fut"></i>':`<i class="hm-c l${lvl(x.v)}" title="${dn} ${pad2(x.dt.getDate())}.${pad2(x.dt.getMonth()+1)}: ${nf(x.v)} ${label}"></i>`}).join('')}`).join('');
+  const total=weeks.reduce((a,b)=>a+b,0);
+  return `<div class="hm" role="img" aria-label="Запросы к ИИ по дням за ${weeks.length} недель, всего ${nf(total)}">
+    <div class="hm-grid" style="--cols:${cols.length}"><span></span>${head}${body}</div>
+    <div class="hm-legend">Меньше${[0,1,2,3,4].map(l=>`<i class="hm-c l${l}"></i>`).join('')}Больше</div></div>`;
 }
 function sparkBars(vals){const max=Math.max(1,...vals), w=96, h=24, cw=w/vals.length;
   return `<svg class="spark" viewBox="0 0 ${w} ${h}" width="${w}" height="${h}" aria-hidden="true">${vals.map((v,i)=>{const hh=v?Math.max(2,h*v/max):0; return hh?`<rect x="${i*cw+1}" y="${h-hh}" width="${cw-2}" height="${hh}" rx="1.5" class="ch-fill"/>`:`<rect x="${i*cw+1}" y="${h-1}" width="${cw-2}" height="1" class="ch-grid-f"/>`}).join('')}</svg>`}
@@ -1763,17 +1809,19 @@ function vAIUse(){
     <div><div class="v ${blT?'alert':''}">${blT}</div><div class="l">Заблокировано запросов с чувствительными данными</div></div>
     <div><div class="v">${nf(cost)} ₽</div><div class="l">Оценка затрат за 4 недели</div></div>
   </div>
-  <div class="card"><div class="card-h"><h3>${ic('chart-column')}Запросы к ИИ по неделям, все проекты</h3></div><div class="card-b">${barChart(tot)}</div></div>
-  <div class="grid g2 ai-grid">
-    <div class="card"><div class="card-h"><h3>${ic('folder-kanban')}По проектам</h3></div><div class="tbl-wrap"><table class="ctable"><thead><tr><th>Проект</th><th>Модель</th><th>Запросов за 4 нед.</th><th>8 недель</th><th>Польз.</th><th>Блок.</th></tr></thead><tbody>
-      ${rows.sort((a,b)=>b.u.weeks.slice(-4).reduce((s,v)=>s+v,0)-a.u.weeks.slice(-4).reduce((s,v)=>s+v,0)).map(({p,u})=>{const r4=u.weeks.slice(-4).reduce((a,b)=>a+b,0), b=u.blocked.pd+u.blocked.sec+u.blocked.db;
-        return `<tr><td><button type="button" class="code-link" data-act="open" data-id="${p.id}" data-tab="ai" title="${esc(p.name)}">${esc(p.code)}</button></td><td data-label="Модель" class="small">${esc(LLMS[p.ai.llm].split(' (')[0])}</td><td data-label="Запросов за 4 нед." class="num">${r4?nf(r4):'—'}</td><td data-label="8 недель">${sparkBars(u.weeks)}</td><td data-label="Пользователей" class="num">${u.users}</td><td data-label="Заблокировано" class="num">${b?`<span class="blk">${ic('shield-alert')}${b}</span>`:'0'}</td></tr>`}).join('')}
-    </tbody></table></div></div>
+  <div class="grid g2">
+  <div class="card"><div class="card-h"><h3>${ic('chart-column')}Запросы к ИИ по дням, все проекты</h3></div><div class="card-b hm-wrap">${heatMap(tot)}${(()=>{const prev4=tot.slice(0,4).reduce((a,b)=>a+b,0), dlt=prev4?Math.round((req30-prev4)/prev4*100):0, mx=Math.max(...tot), mi=tot.indexOf(mx), act=rows.filter(x=>x.u.weeks.slice(-4).some(Boolean)).length;
+    return `<dl class="hm-stats"><div><dt>Пиковая неделя</dt><dd>${nf(mx)}<small>с ${weekLabel(mi)}</small></dd></div><div><dt>К прошлым 4 неделям</dt><dd class="${dlt>=0?'up':'alert'}">${dlt>0?'+':''}${dlt}%</dd></div><div><dt>Среднее в будни</dt><dd>${nf(Math.round(req30/20))}</dd></div><div><dt>Проектов с ИИ</dt><dd>${act}</dd></div></dl>`})()}</div></div>
     <div class="card"><div class="card-h"><h3>${ic('shield-alert')}Заблокированные запросы</h3></div><div class="card-b">
       ${[['pd','Персональные данные клиентов'],['sec','Пароли, ключи, токены'],['db','Выгрузки из баз заказчика']].map(([k,l])=>`<div class="hbar"><div class="hbar-l"><span>${l}</span><b>${bl[k]}</b></div><div class="hbar-t"><i style="width:${bl[k]/blMax*100}%"></i></div></div>`).join('')}
       <p class="small muted" style="margin:14px 0 0">ИИ-шлюз блокирует запрос до отправки в модель и сообщает сотруднику причину. Повторяющиеся случаи стоит разобрать с руководителем проекта.</p>
     </div></div>
-  </div></div>`;
+  </div>
+    <div class="card"><div class="card-h"><h3>${ic('folder-kanban')}По проектам</h3></div><div class="tbl-wrap"><table class="ctable"><thead><tr><th>Проект</th><th>Модель</th><th>Запросов за 4 нед.</th><th>8 недель</th><th>Польз.</th><th>Блок.</th></tr></thead><tbody>
+      ${rows.sort((a,b)=>b.u.weeks.slice(-4).reduce((s,v)=>s+v,0)-a.u.weeks.slice(-4).reduce((s,v)=>s+v,0)).map(({p,u})=>{const r4=u.weeks.slice(-4).reduce((a,b)=>a+b,0), b=u.blocked.pd+u.blocked.sec+u.blocked.db;
+        return `<tr><td><button type="button" class="code-link" data-act="open" data-id="${p.id}" data-tab="ai" title="${esc(p.name)}">${esc(p.code)}</button></td><td data-label="Модель" class="small">${esc(LLMS[p.ai.llm].split(' (')[0])}</td><td data-label="Запросов за 4 нед." class="num">${r4?nf(r4):'—'}</td><td data-label="8 недель">${sparkBars(u.weeks)}</td><td data-label="Пользователей" class="num">${u.users}</td><td data-label="Заблокировано" class="num">${b?`<span class="blk">${ic('shield-alert')}${b}</span>`:'0'}</td></tr>`}).join('')}
+    </tbody></table></div></div>
+  </div>`;
 }
 function vPeople(){
   const all=S.emps.length, busy=new Set(S.projects.filter(p=>!['closed','draft','returned'].includes(p.status)).flatMap(p=>[p.pm,...p.team.map(m=>m.emp)])).size;
