@@ -539,8 +539,18 @@ aside .demo .demo-b{color:var(--side-mute);flex-direction:column;align-items:fle
 .btn.red{background:var(--red);border-color:var(--red);color:#fff}
 @media (prefers-reduced-motion: no-preference){.modal{animation:mIn .16s ease-out}@keyframes mIn{from{opacity:0;transform:translateY(8px) scale(.98)}to{opacity:1;transform:none}}}
 
-.approve-sum{display:flex;flex-wrap:wrap;gap:6px 18px;font-size:13.5px;color:var(--ink-2);margin-top:12px;padding-top:12px;border-top:1px dashed var(--line)}
-.approve-sum b{font-weight:600;color:var(--ink)}
+.approve-sum{margin-top:14px;border:1px solid var(--line);border-radius:var(--r-m);background:var(--surface-2);font-size:14px;color:var(--ink-2);overflow:hidden}
+.as-h{display:flex;align-items:center;gap:10px;padding:10px 14px;border-bottom:1px solid var(--line);color:var(--ink);font-weight:500}
+.as-h span{flex:1}
+.as-h b{font:600 18px/1 var(--display);font-variant-numeric:tabular-nums}
+.as-h svg.lucide{width:18px;height:18px;color:var(--accent)}
+.as-list{list-style:none;margin:0;padding:6px 14px 8px;display:grid;grid-template-columns:repeat(auto-fill,minmax(230px,1fr));column-gap:28px}
+.as-list li{display:flex;align-items:center;gap:10px;padding:7px 0;border-bottom:1px dashed var(--line)}
+.as-list li span{flex:1}
+.as-list li b{font-weight:600;color:var(--ink)}
+.as-list svg.lucide{width:16px;height:16px;color:var(--muted)}
+.modal .as-list{grid-template-columns:1fr}
+.as-list li:last-child{border-bottom:0}
 .legend{display:flex;gap:14px;flex-wrap:wrap;font-size:12.5px;color:var(--muted);margin-left:auto}
 .legend>span{display:inline-flex;align-items:center;gap:8px}
 
@@ -1552,8 +1562,9 @@ function vCatalog(){
 function approveSummary(p){
   const tmp={seq:0,tickets:[]}; const ts=genTickets(tmp,{...p,status:'pending'});
   const k=x=>ts.filter(t=>x.includes(t.kind)).length;
-  const parts=[[k(['access']),'доступов'],[k(['channel','client']),'по каналам'],[k(['ai','bot']),'по ИИ-контуру'],[k(['space','repo']),'по трекеру и репозиториям'],[k(['sec']),'по безопасности']].filter(x=>x[0]);
-  return `<div class="approve-sum">${ic('ticket')}<span>После утверждения уйдёт <b>${ts.length} ${plural(ts.length,'заявка','заявки','заявок')}</b>:</span>${parts.map(([n,l])=>`<span><b>${n}</b> ${l}</span>`).join('')}</div>`;
+  const parts=[[k(['access']),'key-round','Доступы к инструментам'],[k(['channel','client']),'messages-square','Каналы'],[k(['ai','bot']),'sparkles','ИИ-контур'],[k(['space','repo']),'git-branch','Трекер и репозитории'],[k(['sec']),'shield-check','Безопасность']].filter(x=>x[0]);
+  return `<div class="approve-sum"><div class="as-h">${ic('ticket')}<span>Заявки в сервис-деск после утверждения</span><b>${ts.length}</b></div>
+  <ul class="as-list">${parts.map(([n,i,l])=>`<li>${ic(i)}<span>${l}</span><b>${n}</b></li>`).join('')}</ul></div>`;
 }
 function vApprovals(){
   const list=S.projects.filter(p=>p.status==='pending');
