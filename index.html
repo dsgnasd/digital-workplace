@@ -178,10 +178,16 @@ tr.click:hover td:first-child b{text-decoration:underline;text-decoration-color:
 .step.done b{color:var(--accent-2)}
 .step+.step{margin-left:6px}
 
-.model-card{padding:16px;border:1px solid var(--line-strong);border-radius:var(--r-m);cursor:pointer;background:var(--surface);position:relative}
-.model-card:hover{border-color:var(--accent)}
-.model-card.on{border-color:var(--accent);box-shadow:inset 0 0 0 1px var(--accent);background:var(--accent-soft)}
+.model-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(230px,1fr));gap:14px}
+.model-card{padding:16px;border:1px solid transparent;border-radius:var(--r-m);cursor:pointer;background:var(--surface);position:relative;box-shadow:0 1px 2px rgba(15,27,45,.06),0 2px 8px rgba(15,27,45,.04);transition:border-color .15s,box-shadow .15s}
+.model-card:hover{border-color:color-mix(in srgb,var(--accent) 45%,transparent)}
+.model-card.on{border-color:var(--accent);box-shadow:0 0 0 1px var(--accent),0 6px 20px rgba(31,79,191,.10)}
 .model-card.on:after{content:"✓";position:absolute;top:12px;right:14px;color:var(--accent);font-weight:700}
+.mc-rules{display:flex;flex-direction:column;gap:5px;margin-top:12px;padding-top:12px;border-top:1px solid var(--line);width:100%;font-size:12.5px;color:var(--muted)}
+.mc-rules span{display:flex;align-items:center;gap:7px}
+.mc-rules svg.lucide{width:14px;height:14px}
+.mc-rules i{font-style:normal;color:var(--muted);min-width:66px}
+.mc-rules span.on{color:var(--ink-2)}.mc-rules span.on svg.lucide{color:var(--accent)}
 .model-card b{display:block;margin-bottom:6px;font-size:14.5px}
 
 .member{border:1px solid var(--line);border-radius:var(--r-m);padding:14px 16px;background:var(--surface)}
@@ -593,6 +599,25 @@ aside .demo .demo-b{color:var(--side-mute);flex-direction:column;align-items:fle
 .dproj-h .progress{width:140px}
 
 /* --- модальное окно --- */
+.modal.wide{width:min(660px,100%)}
+.mt-desc{margin:0;padding:12px 20px 0}
+.mt-foot{padding:10px 20px 14px;border-top:1px solid var(--line)}
+.btn.ghost{border-color:transparent;background:none;color:var(--ink-2)}
+.btn.ghost:hover{background:var(--surface-2)}
+.btn.ghost.danger{color:var(--red)}.btn.ghost.danger:hover:not(:disabled){background:var(--red-soft)}
+.mform{gap:20px}
+.mgroup{border:0;margin:0;padding:0;min-width:0}
+.mgroup legend{font-size:13.5px;font-weight:600;color:var(--ink);padding:0;margin-bottom:8px;display:flex;align-items:center;gap:2px}
+.mgroup:disabled{opacity:.45}
+.mopts{display:grid;gap:8px}.mopts.c2{grid-template-columns:1fr 1fr}.mopts.c3{grid-template-columns:repeat(3,1fr)}
+.mopt{display:flex;gap:10px;align-items:flex-start;padding:10px 12px;border-radius:var(--r-m);background:var(--surface-2);border:1px solid transparent;cursor:pointer;font-size:13.5px;transition:border-color .12s,background .12s}
+.mopt:hover{border-color:var(--line-strong)}
+.mopt:has(input:checked){background:var(--accent-soft);border-color:color-mix(in srgb,var(--accent) 40%,transparent)}
+.mopt input{margin:2px 0 0;accent-color:var(--accent);width:15px;height:15px;flex:none}
+.mopt b{display:block;font-weight:600;color:var(--ink)}
+.mopt small{display:block;color:var(--muted);font-size:12.5px;line-height:1.35;margin-top:2px}
+.mgroup:disabled .mopt{cursor:not-allowed}
+@media (max-width:640px){.mopts.c2,.mopts.c3{grid-template-columns:1fr}}
 .modal-bg{position:fixed;inset:0;background:rgba(15,27,45,.42);z-index:80;display:grid;place-items:center;padding:16px}
 .modal{background:var(--surface);border-radius:var(--r-l);width:min(480px,100%);box-shadow:0 24px 64px rgba(15,27,45,.3)}
 .modal h2{font-size:18px;margin:0;padding:20px 22px 6px}
@@ -743,12 +768,38 @@ const GROUPS = {
   ai:'Команда ИИ-платформы',
   sec:'Информационная безопасность'
 };
-const CLIENT_MODELS = {
-  bank:{name:'Банк / финсектор', desc:'Строгий контур. Отдельный канал с заказчиком, DLP, только on-prem LLM, изоляция контекста — строгая.', clientInComms:true, llm:'onprem', isolation:'strict', dlp:true},
-  corp:{name:'Корпоративный заказчик', desc:'Канал с заказчиком, облачная LLM в РФ-контуре, стандартная изоляция.', clientInComms:true, llm:'gigachat', isolation:'standard', dlp:false},
-  gov:{name:'Госзаказчик', desc:'Закрытый контур. Заказчик — только через официальные каналы, внешние LLM запрещены.', clientInComms:false, llm:'onprem', isolation:'strict', dlp:true},
-  internal:{name:'Внутренний проект', desc:'Без заказчика в коммуникациях. Любая разрешённая модель.', clientInComms:false, llm:'gigachat', isolation:'standard', dlp:false}
-};
+// Модели работы с заказчиком — шаблоны правил проекта. Хранятся в данных, редактирует руководитель ЦК
+const DEFAULT_MODELS=[
+  {id:'bank', name:'Банк / финсектор', desc:'Финансовые организации с требованиями регулятора.', comms:'required', formats:['bot','channel'], llms:['onprem','none'], isolation:'strict', dlp:true},
+  {id:'corp', name:'Корпоративный заказчик', desc:'Коммерческие проекты с каналом для заказчика.', comms:'allowed', formats:['channel','bot','email'], llms:['gigachat','yagpt','onprem','none'], isolation:'standard', dlp:false},
+  {id:'gov', name:'Госзаказчик', desc:'Закрытый контур, заказчик только через официальные каналы.', comms:'forbidden', formats:[], llms:['onprem','none'], isolation:'strict', dlp:true},
+  {id:'internal', name:'Внутренний проект', desc:'Проекты для своей компании, без внешнего заказчика.', comms:'forbidden', formats:[], llms:['gigachat','yagpt','onprem','none'], isolation:'standard', dlp:false}
+];
+const LLM_PREF=['gigachat','yagpt','onprem','none'];
+const COMMS_RULE={required:'Обязательно', allowed:'По выбору', forbidden:'Нет'};
+function modelNorm(m){m.formats=(m.formats||[]).filter(f=>COMM_FORMATS[f]); m.llms=LLM_PREF.filter(k=>(m.llms||[]).includes(k)); m.clientInComms=m.comms!=='forbidden'; m.llm=m.llms[0]||'none'; return m}
+const defaultModels=()=>DEFAULT_MODELS.map(m=>modelNorm({...JSON.parse(JSON.stringify(m)), v:1, versions:[{v:1,d:'2026-02-10',by:'Руководитель ЦК',ch:'Первая версия'}]}));
+// доступ как к словарю: CLIENT_MODELS[id], Object.entries(CLIENT_MODELS)
+const CLIENT_MODELS=new Proxy({},{
+  get:(_,k)=>typeof k==='string'?((S&&S.models)||[]).find(m=>m.id===k)||((S&&S.models)||[])[0]:undefined,
+  ownKeys:()=>((S&&S.models)||[]).map(m=>m.id),
+  getOwnPropertyDescriptor:()=>({enumerable:true,configurable:true})});
+const modelUse=id=>S.projects.filter(p=>p.model===id&&p.status!=='closed').length;
+function modelRules(m){
+  const cloud=m.llms.filter(k=>k!=='none'), llmV=!cloud.length?'ИИ запрещён':cloud.length===1?LLMS[cloud[0]].split(' (')[0]:`${cloud.length} на выбор`;
+  return [
+    ['users','Заказчик в коммуникациях', m.comms==='forbidden'?'Только внутренняя команда':m.formats.map(f=>COMM_FORMATS[f]).join(' · '), COMMS_RULE[m.comms], m.comms==='required'],
+    ['sparkles','Языковые модели', cloud.map(k=>LLMS[k]).join(' · ')||'Ассистенты отключены', llmV, cloud.length>0],
+    ['lock','Изоляция контекста', ISOLATION[m.isolation].split(' — ')[1].replace(/^./,c=>c.toUpperCase()), ISOLATION[m.isolation].split(' — ')[0], m.isolation==='strict'],
+    ['shield-check','DLP', 'Контроль утечек данных', m.dlp?'Обязателен':'Не требуется', m.dlp]];
+}
+function modelViolations(p){const m=CLIENT_MODELS[p.model], v=[];
+  if(!m.llms.includes(p.ai.llm)) v.push(`Модель «${m.name}» не разрешает «${LLMS[p.ai.llm].split(' (')[0]}»`);
+  if(m.isolation==='strict'&&p.ai.isolation!=='strict') v.push(`Модель «${m.name}» требует строгой изоляции`);
+  if(m.comms==='forbidden'&&p.clientInComms) v.push(`Модель «${m.name}» не допускает заказчика в коммуникациях`);
+  if(m.comms==='required'&&!p.clientInComms) v.push(`Модель «${m.name}» требует канал с заказчиком`);
+  if(p.clientInComms&&m.formats.length&&!m.formats.includes(p.commFormat)) v.push(`Формат связи «${COMM_FORMATS[p.commFormat]}» не разрешён моделью`);
+  return v}
 const LLMS = {onprem:'On-prem LLM (Qwen, закрытый контур)', gigachat:'GigaChat (облако РФ)', yagpt:'YandexGPT (облако РФ)', none:'ИИ-ассистенты запрещены'};
 const ISOLATION = {strict:'Строгая — отдельный RAG-индекс, ключ и квота на проект, логирование всех запросов', standard:'Стандартная — общий ключ отдела, запросы маркируются тегом проекта'};
 const COMM_FORMATS = {channel:'Общий канал в VK Teams', bot:'Канал + чат-бот выгрузки в контекст проекта', email:'Только почта / встречи (без мессенджера)'};
@@ -893,7 +944,7 @@ function seed(){
   // по какой версии шаблона собраны идущие проекты (старые проекты — по прошлым версиям)
   const verAt=(rid,date)=>{const vs=roles.find(r=>r.id===rid).versions.filter(x=>x.d<=date); return vs.length?vs[vs.length-1].v:1};
   projects.forEach(p=>{ if(['draft','pending','returned'].includes(p.status)) return; p.tplVer=Object.fromEntries(p.team.map(m=>[m.role,verAt(m.role,p.start)])) });
-  const s = {tools, roles, emps, projects, tickets:[], seq:100};
+  const s = {tools, roles, emps, projects, models:defaultModels(), tickets:[], seq:100};
   S = s; // справочники нужны генераторам заявок
   const H=36e5, now=Date.now();
   projects.forEach(p=>{
@@ -1141,13 +1192,13 @@ function loginView(){
 
 /* ========= Навигация ========= */
 const NAV={
-  ck:[['dashboard','Обзор'],['approvals','На утверждение'],['projects','Проекты'],['people','Сотрудники'],['roles','Шаблоны ролей'],['catalog','Каталог инструментов'],['aiuse','Использование ИИ'],['audit','Журнал аудита']],
+  ck:[['dashboard','Обзор'],['approvals','На утверждение'],['projects','Проекты'],['people','Сотрудники'],['roles','Шаблоны ролей'],['models','Модели заказчиков'],['catalog','Каталог инструментов'],['aiuse','Использование ИИ'],['audit','Журнал аудита']],
   pm:[['dashboard','Обзор'],['projects','Мои проекты'],['wizard','Новый проект'],['roles','Шаблоны ролей']],
   support:[['desk','Сервис-деск'],['projects','Проекты'],['people','Сотрудники'],['audit','Журнал аудита'],['integrations','Интеграции']],
   emp:[['my','Моё рабочее место'],['roles','Методология ролей']]
 };
-const ICONS={dashboard:'layout-dashboard',approvals:'stamp',roles:'layers',catalog:'library',projects:'folder-kanban',wizard:'square-plus',desk:'life-buoy',integrations:'plug',my:'user-round',project:'folder-kanban',people:'users',audit:'scroll-text',aiuse:'bot'};
-const TITLES={dashboard:'Обзор',approvals:'Утверждение проектов',roles:'Шаблоны рабочих мест по ролям',catalog:'Каталог инструментов и доступов',projects:'Проекты',wizard:'Новый проект',desk:'Сервис-деск: заявки на рабочие места',integrations:'Интеграции',my:'Моё рабочее место',people:'Сотрудники',audit:'Журнал аудита',aiuse:'Использование ИИ'};
+const ICONS={models:'scale',dashboard:'layout-dashboard',approvals:'stamp',roles:'layers',catalog:'library',projects:'folder-kanban',wizard:'square-plus',desk:'life-buoy',integrations:'plug',my:'user-round',project:'folder-kanban',people:'users',audit:'scroll-text',aiuse:'bot'};
+const TITLES={models:'Модели работы с заказчиком',dashboard:'Обзор',approvals:'Утверждение проектов',roles:'Шаблоны рабочих мест по ролям',catalog:'Каталог инструментов и доступов',projects:'Проекты',wizard:'Новый проект',desk:'Сервис-деск: заявки на рабочие места',integrations:'Интеграции',my:'Моё рабочее место',people:'Сотрудники',audit:'Журнал аудита',aiuse:'Использование ИИ'};
 
 // Какие проекты видит роль: ПМ — свои, остальные — всё, кроме чужих черновиков
 const isOwner=p=>ui.role==='pm'&&p.pm===ui.session?.user;
@@ -1202,6 +1253,7 @@ function view(){
     case 'people':return vPeople();
     case 'audit':return vAudit();
     case 'aiuse':return vAIUse();
+    case 'models':return vModels();
   }
   return '';
 }
@@ -1402,8 +1454,8 @@ function pAI(p){
   if(p.ai.llm==='none') return `<div class="card card-b"><div class="callout warn">Для проекта ИИ-ассистенты запрещены моделью заказчика.</div></div>`;
   const users=p.team.filter(m=>m.tools.some(t=>['llm','aide'].includes(t))).map(m=>esc(E(m.emp).name));
   const au=aiUsage(p), r4=au.weeks.slice(-4).reduce((a,b)=>a+b,0), b4=au.blocked.pd+au.blocked.sec+au.blocked.db;
-  const usage=au.weeks.some(Boolean)?`<div class="card"><div class="card-h"><h3>${ic('chart-column')}Активность за 8 недель</h3></div><div class="card-b hm-wrap">${heatMap(au.weeks,{seed:p.id.length+p.code.length})}
-    <dl class="hm-stats"><div><dt>Запросов за 4 недели</dt><dd>${nf(r4)}</dd></div><div><dt>Пользуются ИИ</dt><dd>${au.users} ${plural(au.users,'человек','человека','человек')}</dd></div><div><dt>Заблокировано</dt><dd class="${b4?'alert':''}">${b4}</dd></div></dl></div></div>`:'';
+  const usage=au.weeks.some(Boolean)?`<div class="card"><div class="card-h"><h3>${ic('chart-column')}Активность за 2 месяца</h3></div><div class="card-b hm-wrap">${heatMap(au.weeks,{seed:p.id.length+p.code.length})}
+    <dl class="hm-stats"><div><dt>Запросов за месяц</dt><dd>${nf(r4)}</dd></div><div><dt>Пользуются ИИ</dt><dd>${au.users} ${plural(au.users,'человек','человека','человек')}</dd></div><div><dt>Заблокировано</dt><dd class="${b4?'alert':''}">${b4}</dd></div></dl></div></div>`:'';
   return `<div class="stack"><div class="grid ${usage?'g2':''}" style="align-items:stretch">${usage}<div class="card"><div class="card-h"><h3>${ic('sparkles')}Как ИИ работает на этом проекте</h3></div><div class="card-b">
     <ul class="plain">
       <li>Сотрудники пользуются ИИ-ассистентами через общий шлюз компании. Модель: <b>${esc(LLMS[p.ai.llm])}</b>.</li>
@@ -1537,13 +1589,14 @@ function wStep0(d){
     <div class="field"><label for="f-client">Заказчик</label><input id="f-client" type="text" data-w="client" value="${esc(d.client)}" placeholder="Например: ООО «Вектор»"></div>
   </div>
   <div class="field"><span class="flabel" id="lbl-model">Модель работы с заказчиком${tip(TIPS.model)}</span></div>
-  <div class="grid g4" role="radiogroup" aria-labelledby="lbl-model">${Object.entries(CLIENT_MODELS).map(([k,m])=>`<button type="button" role="radio" aria-checked="${d.model===k}" tabindex="${d.model===k?0:-1}" class="model-card ${d.model===k?'on':''}" data-act="wmodel" data-k="${k}"><b>${m.name}</b><span class="small muted">${m.desc}</span></button>`).join('')}</div>
+  <div class="model-grid" role="radiogroup" aria-labelledby="lbl-model">${Object.entries(CLIENT_MODELS).map(([k,m])=>`<button type="button" role="radio" aria-checked="${d.model===k}" tabindex="${d.model===k?0:-1}" class="model-card ${d.model===k?'on':''}" data-act="wmodel" data-k="${k}"><b>${esc(m.name)}</b><span class="small muted">${esc(m.desc)}</span><span class="mc-rules">${modelRules(m).map(([i,l,,v,on],j)=>`<span class="${on?'on':''}">${ic(i)}<i>${['Заказчик','ИИ','Изоляция','DLP'][j]}</i>${v.toLowerCase().replace(/^on-prem llm$/,'on-prem LLM')}</span>`).join('')}</span></button>`).join('')}</div>
   <p class="small muted req-note">${REQ_NOTE}</p></div>`;
 }
 function wStep1(d){
+  const m=CLIENT_MODELS[d.model], lock=m.comms!=='allowed', fmts=m.formats.length?m.formats:Object.keys(COMM_FORMATS);
   return `<div class="stack">
-  <label class="check ${d.clientInComms?'on':''}"><input type="checkbox" data-w="clientInComms" ${d.clientInComms?'checked':''}><div><b>Заказчик участвует в наших коммуникациях</b></div></label>
-  ${d.clientInComms?`<div class="field"><label for="f-fmt">Формат коммуникации с заказчиком</label><select id="f-fmt" data-w="commFormat">${Object.entries(COMM_FORMATS).map(([k,v])=>`<option value="${k}" ${d.commFormat===k?'selected':''}>${v}</option>`).join('')}</select></div>
+  <label class="check ${d.clientInComms?'on':''}" ${lock?'style="opacity:.7;cursor:default"':''}><input type="checkbox" data-w="clientInComms" ${d.clientInComms?'checked':''} ${lock?'disabled':''}><div><b>Заказчик участвует в наших коммуникациях</b>${lock?`<div class="small muted">${m.comms==='required'?'Обязательно':'Запрещено'} по модели «${esc(m.name)}»</div>`:''}</div></label>
+  ${d.clientInComms?`<div class="field"><label for="f-fmt">Формат коммуникации с заказчиком</label><select id="f-fmt" data-w="commFormat">${Object.entries(COMM_FORMATS).filter(([k])=>fmts.includes(k)).map(([k,v])=>`<option value="${k}" ${d.commFormat===k?'selected':''}>${v}</option>`).join('')}</select></div>
   <div class="field"><label for="repIn">Представители заказчика${REQ}</label>
     <div>${d.clientReps.map((r,i)=>`<span class="chip">${esc(r)}<button type="button" class="chip-x" data-act="wrmrep" data-i="${i}" aria-label="Удалить: ${esc(r)}">${ic('x')}</button></span>`).join('')}</div>
     <div class="row"><input type="text" id="repIn" placeholder="ФИО и роль, например: Иванов И., владелец продукта" style="flex:2;min-width:220px"><input type="text" id="repContact" aria-label="Контакт представителя" placeholder="Почта или @ник в VK Teams" style="flex:1;min-width:180px"><button class="btn" data-act="waddrep">${ic('plus')}Добавить</button></div><span class="ferr" id="e-repadd"></span><span class="ferr" id="e-reps"></span></div>`:''}
@@ -1565,9 +1618,9 @@ function wStep2(d){
 }
 function wStep3(d){
   const m=CLIENT_MODELS[d.model];
-  const llmOpts=d.model==='bank'||d.model==='gov'?['onprem','none']:Object.keys(LLMS);
+  const llmOpts=m.llms.length?m.llms:['none'];
   return `<div class="stack">
-  ${m.isolation==='strict'?`<div class="callout warn">Модель «${esc(m.name)}» требует строгой изоляции и on-prem LLM.</div>`:''}
+  ${m.isolation==='strict'?`<div class="callout warn">Модель «${esc(m.name)}» требует строгой изоляции. Доступные модели ИИ ограничены правилами модели.</div>`:''}
   <div class="grid g2">
     <div class="field"><label for="f-llm">Модель ИИ${tip(TIPS.llm)}</label><select id="f-llm" data-w="ai.llm">${llmOpts.map(k=>`<option value="${k}" ${d.ai.llm===k?'selected':''}>${LLMS[k]}</option>`).join('')}</select></div>
  <div class="field"><label for="f-iso">Изоляция контекста${tip(TIPS.isolation)}</label><select id="f-iso" data-w="ai.isolation" ${m.isolation==='strict'?'disabled':''}>${Object.entries(ISOLATION).map(([k,v])=>`<option value="${k}" ${d.ai.isolation===k?'selected':''}>${v.split(' — ')[0]}</option>`).join('')}</select></div>
@@ -1653,7 +1706,7 @@ function vApprovals(){
   if(!list.length) return `<div class="card empty">Нет проектов на утверждении. Новые появятся, когда руководитель проекта отправит проект.</div>`;
   return `<div class="stack">${list.map(p=>{
     const viol=[]; p.team.forEach(m=>{const r=R(m.role); r.req.forEach(t=>{if(!m.tools.includes(t))viol.push(`${E(m.emp).name}: нет обязательного «${T(t).name}»`)}); m.tools.forEach(t=>{if(!r.req.includes(t)&&!r.opt.includes(t))viol.push(`${E(m.emp).name}: «${T(t).name}» вне шаблона роли`)})});
-    if(CLIENT_MODELS[p.model].isolation==='strict'&&p.ai.llm!=='onprem'&&p.ai.llm!=='none') viol.push('Модель заказчика требует on-prem LLM');
+    viol.push(...modelViolations(p));
     return `<div class="card"><div class="card-h"><h3>${esc(p.name)}</h3><span class="mono faint">${esc(p.code)}</span><div style="flex:1"></div>
     <button class="btn sm" data-act="open" data-id="${p.id}">${ic('book-open')}Открыть паспорт</button><button class="btn sm danger" data-act="return" data-id="${p.id}">${ic('undo-2')}Вернуть</button><button class="btn sm ok" data-act="approve" data-id="${p.id}">${ic('stamp')}Утвердить</button></div>
     <div class="card-b"><div class="grid g3">
@@ -1795,6 +1848,60 @@ function heatMap(weeks,{label='запросов',seed=1}={}){
 }
 function sparkBars(vals){const max=Math.max(1,...vals), w=96, h=24, cw=w/vals.length;
   return `<svg class="spark" viewBox="0 0 ${w} ${h}" width="${w}" height="${h}" aria-hidden="true">${vals.map((v,i)=>{const hh=v?Math.max(2,h*v/max):0; return hh?`<rect x="${i*cw+1}" y="${h-hh}" width="${cw-2}" height="${hh}" rx="1.5" class="ch-fill"/>`:`<rect x="${i*cw+1}" y="${h-1}" width="${cw-2}" height="1" class="ch-grid-f"/>`}).join('')}</svg>`}
+function vModels(){
+  return `<div class="stack"><div class="row" style="justify-content:flex-end"><button class="btn pri" data-act="mdlEdit">${ic('plus')}Новая модель</button></div>
+  <div class="grid g2" style="align-items:start">${S.models.map(m=>{const u=modelUse(m.id), last=m.versions?.[m.versions.length-1];
+    return `<div class="card"><div class="card-h"><h3>${esc(m.name)}</h3><span class="badge b-vio" title="Версия модели">v${m.v||1}</span><div style="flex:1"></div>
+      <button type="button" class="btn sm ghost" data-act="mdlEdit" data-id="${m.id}">${ic('pencil')}Изменить</button>
+      <button type="button" class="btn sm ghost" data-act="mdlCopy" data-id="${m.id}" aria-label="Дублировать «${esc(m.name)}»" title="Дублировать">${ic('copy')}</button>
+      <button type="button" class="btn sm ghost danger" data-act="mdlDel" data-id="${m.id}" ${u?'disabled title="Модель используется в проектах"':`title="Удалить"`} aria-label="Удалить «${esc(m.name)}»">${ic('trash-2')}</button></div>
+      ${m.desc?`<p class="small muted mt-desc">${esc(m.desc)}</p>`:''}
+      <ul class="rules">${modelRules(m).map(([i,l,sub,v,on])=>`<li><span class="ru-ic" aria-hidden="true">${ic(i)}</span><span class="ru-b"><span class="ru-l">${l}</span><span class="ru-s">${esc(sub)}</span></span><span class="ru-v ${on?'on':''}">${esc(v)}</span></li>`).join('')}</ul>
+      <div class="mt-foot small muted">${u?`Используется в ${u} ${plural(u,'проекте','проектах','проектах')}`:'Пока не используется'}${last?` · ${esc(last.ch)}, ${fmtD(last.d)}`:''}</div></div>`}).join('')}</div></div>`;
+}
+function modelForm(m){
+  const opt=(type,name,val,on,title,sub='')=>`<label class="mopt"><input type="${type}" name="${name}" value="${val}" ${on?'checked':''}><span><b>${title}</b>${sub?`<small>${sub}</small>`:''}</span></label>`;
+  return `<div class="stack mform">
+    <div class="field"><label for="mMn">Название${REQ}</label><input type="text" id="mMn" value="${esc(m.name)}" placeholder="Например: Ритейл"><span class="ferr" id="e-mMn"></span></div>
+    <div class="field"><label for="mMd">Для каких проектов</label><input type="text" id="mMd" value="${esc(m.desc)}" placeholder="Коротко, одной фразой"></div>
+    <fieldset class="mgroup"><legend>Заказчик в коммуникациях</legend><div class="mopts c3">
+      ${opt('radio','mComms','required',m.comms==='required','Обязательно','Канал с заказчиком всегда')}
+      ${opt('radio','mComms','allowed',m.comms==='allowed','По выбору','Решает руководитель проекта')}
+      ${opt('radio','mComms','forbidden',m.comms==='forbidden','Нет','Только внутренняя команда')}</div></fieldset>
+    <fieldset class="mgroup" id="mFmts" ${m.comms==='forbidden'?'disabled':''}><legend>Разрешённые форматы связи</legend><div class="mopts">
+      ${Object.entries(COMM_FORMATS).map(([k,v])=>opt('checkbox','mFmt',k,m.formats.includes(k),v)).join('')}</div><span class="ferr" id="e-mFmt"></span></fieldset>
+    <fieldset class="mgroup"><legend>Разрешённые модели ИИ</legend><div class="mopts c2">
+      ${LLM_PREF.map(k=>opt('checkbox','mLlm',k,m.llms.includes(k),LLMS[k].split(' (')[0],(LLMS[k].match(/\((.*)\)/)||[])[1]||'')).join('')}</div><span class="ferr" id="e-mLlm"></span></fieldset>
+    <fieldset class="mgroup"><legend>Изоляция контекста${tip(TIPS.isolation)}</legend><div class="mopts c2">
+      ${Object.entries(ISOLATION).map(([k,v])=>opt('radio','mIso',k,m.isolation===k,v.split(' — ')[0],v.split(' — ')[1])).join('')}</div></fieldset>
+    <label class="mopt"><input type="checkbox" id="mDlp" ${m.dlp?'checked':''}><span><b>DLP обязателен</b><small>Агент контроля утечек на рабочих местах команды</small></span></label>
+    ${m.id?`<div class="field"><label for="mCh">Что изменилось</label><input type="text" id="mCh" placeholder="Например: разрешили YandexGPT"></div>`:''}
+  </div>`;
+}
+function openModelEditor(src,copy){
+  const m=src?JSON.parse(JSON.stringify(src)):{name:'',desc:'',comms:'allowed',formats:['channel'],llms:['onprem'],isolation:'standard',dlp:false};
+  if(copy){delete m.id; m.name=m.name+' (копия)'}
+  const editing=src&&!copy, u=editing?modelUse(src.id):0;
+  modal({wide:true, title:editing?`Изменить «${src.name}»`:copy?'Копия модели':'Новая модель работы с заказчиком', ok:editing?'Сохранить':'Создать',
+    body:(editing&&u?`<div class="callout small" style="margin-bottom:14px">${ic('info')}Модель используется в ${u} ${plural(u,'проекте','проектах','проектах')}. Новые правила проверяются при утверждении и пересмотре доступов.</div>`:'')+modelForm(editing?m:{...m,id:''}),
+    onOk:()=>{
+      const q=sel=>[...document.querySelectorAll(sel)];
+      const name=$('#mMn').value.trim(), comms=q('input[name=mComms]:checked')[0]?.value||'allowed', formats=q('input[name=mFmt]:checked').map(x=>x.value), llms=q('input[name=mLlm]:checked').map(x=>x.value), iso=q('input[name=mIso]:checked')[0]?.value||'standard';
+      document.querySelectorAll('.mform .ferr').forEach(e=>e.textContent='');
+      let bad=null; const err=(id,t,f)=>{$('#'+id).textContent=t; bad??=f};
+      if(!name) err('e-mMn','Укажите название','#mMn');
+      else if(S.models.some(x=>x.name.toLowerCase()===name.toLowerCase()&&(!editing||x.id!==src.id))) err('e-mMn','Модель с таким названием уже есть','#mMn');
+      if(comms!=='forbidden'&&!formats.length) err('e-mFmt','Выберите хотя бы один формат связи','input[name=mFmt]');
+      if(!llms.length) err('e-mLlm','Выберите хотя бы один вариант','input[name=mLlm]');
+      else if(iso==='strict'&&llms.some(k=>k==='gigachat'||k==='yagpt')) err('e-mLlm','Строгая изоляция допускает только on-prem LLM','input[name=mLlm]');
+      if(bad){document.querySelector(bad)?.focus(); return false}
+      const data={name, desc:$('#mMd').value.trim(), comms, formats:comms==='forbidden'?[]:formats, llms, isolation:iso, dlp:$('#mDlp').checked};
+      if(editing){const t=src, v=(t.v||1)+1; Object.assign(t,data); t.v=v; (t.versions??=[]).push({v,d:today(),by:'Руководитель ЦК',ch:$('#mCh')?.value.trim()||'Правила обновлены'}); modelNorm(t); toast(`Модель «${name}» сохранена, версия ${v}`)}
+      else{S.models.push(modelNorm({id:'m'+Date.now().toString(36), ...data, v:1, versions:[{v:1,d:today(),by:'Руководитель ЦК',ch:copy?'Создана копированием':'Первая версия'}]})); toast(`Модель «${name}» создана — она уже доступна в мастере нового проекта`)}
+      save(); render()}});
+  const md=document.querySelector('.modal'); md?.addEventListener('change',e=>{if(e.target.name==='mComms') $('#mFmts').disabled=e.target.value==='forbidden'});
+  setTimeout(()=>$('#mMn')?.focus(),0);
+}
 function vAIUse(){
   const rows=S.projects.filter(p=>p.status!=='draft').map(p=>({p,u:aiUsage(p)})).filter(x=>x.u.weeks.some(Boolean)||x.u.users);
   const tot=Array(WEEKS).fill(0); rows.forEach(({u})=>u.weeks.forEach((v,i)=>tot[i]+=v));
@@ -1804,22 +1911,22 @@ function vAIUse(){
   const blMax=Math.max(1,bl.pd,bl.sec,bl.db);
   return `<div class="stack">
   <div class="statline">
-    <div><div class="v">${nf(req30)}</div><div class="l">Запросов к ИИ за 4 недели</div></div>
+    <div><div class="v">${nf(req30)}</div><div class="l">Запросов к ИИ за месяц</div></div>
     <div><div class="v">${users}</div><div class="l">Сотрудников пользуются ИИ</div></div>
     <div><div class="v ${blT?'alert':''}">${blT}</div><div class="l">Заблокировано запросов с чувствительными данными</div></div>
-    <div><div class="v">${nf(cost)} ₽</div><div class="l">Оценка затрат за 4 недели</div></div>
+    <div><div class="v">${nf(cost)} ₽</div><div class="l">Оценка затрат за месяц</div></div>
   </div>
   <div class="grid g2">
   <div class="card"><div class="card-h"><h3>${ic('chart-column')}Запросы к ИИ по дням, все проекты</h3></div><div class="card-b hm-wrap">${heatMap(tot)}${(()=>{const prev4=tot.slice(0,4).reduce((a,b)=>a+b,0), dlt=prev4?Math.round((req30-prev4)/prev4*100):0, mx=Math.max(...tot), mi=tot.indexOf(mx), act=rows.filter(x=>x.u.weeks.slice(-4).some(Boolean)).length;
-    return `<dl class="hm-stats"><div><dt>Пиковая неделя</dt><dd>${nf(mx)}<small>с ${weekLabel(mi)}</small></dd></div><div><dt>К прошлым 4 неделям</dt><dd class="${dlt>=0?'up':'alert'}">${dlt>0?'+':''}${dlt}%</dd></div><div><dt>Среднее в будни</dt><dd>${nf(Math.round(req30/20))}</dd></div><div><dt>Проектов с ИИ</dt><dd>${act}</dd></div></dl>`})()}</div></div>
+    return `<dl class="hm-stats"><div><dt>Пиковая неделя</dt><dd>${nf(mx)}<small>с ${weekLabel(mi)}</small></dd></div><div><dt>К прошлому месяцу</dt><dd class="${dlt>=0?'up':'alert'}">${dlt>0?'+':''}${dlt}%</dd></div><div><dt>Среднее в будни</dt><dd>${nf(Math.round(req30/20))}</dd></div><div><dt>Проектов с ИИ</dt><dd>${act}</dd></div></dl>`})()}</div></div>
     <div class="card"><div class="card-h"><h3>${ic('shield-alert')}Заблокированные запросы</h3></div><div class="card-b">
       ${[['pd','Персональные данные клиентов'],['sec','Пароли, ключи, токены'],['db','Выгрузки из баз заказчика']].map(([k,l])=>`<div class="hbar"><div class="hbar-l"><span>${l}</span><b>${bl[k]}</b></div><div class="hbar-t"><i style="width:${bl[k]/blMax*100}%"></i></div></div>`).join('')}
       <p class="small muted" style="margin:14px 0 0">ИИ-шлюз блокирует запрос до отправки в модель и сообщает сотруднику причину. Повторяющиеся случаи стоит разобрать с руководителем проекта.</p>
     </div></div>
   </div>
-    <div class="card"><div class="card-h"><h3>${ic('folder-kanban')}По проектам</h3></div><div class="tbl-wrap"><table class="ctable"><thead><tr><th>Проект</th><th>Модель</th><th>Запросов за 4 нед.</th><th>8 недель</th><th>Польз.</th><th>Блок.</th></tr></thead><tbody>
+    <div class="card"><div class="card-h"><h3>${ic('folder-kanban')}По проектам</h3></div><div class="tbl-wrap"><table class="ctable"><thead><tr><th>Проект</th><th>Модель</th><th>Запросов за месяц</th><th>2 месяца</th><th>Польз.</th><th>Блок.</th></tr></thead><tbody>
       ${rows.sort((a,b)=>b.u.weeks.slice(-4).reduce((s,v)=>s+v,0)-a.u.weeks.slice(-4).reduce((s,v)=>s+v,0)).map(({p,u})=>{const r4=u.weeks.slice(-4).reduce((a,b)=>a+b,0), b=u.blocked.pd+u.blocked.sec+u.blocked.db;
-        return `<tr><td><button type="button" class="code-link" data-act="open" data-id="${p.id}" data-tab="ai" title="${esc(p.name)}">${esc(p.code)}</button></td><td data-label="Модель" class="small">${esc(LLMS[p.ai.llm].split(' (')[0])}</td><td data-label="Запросов за 4 нед." class="num">${r4?nf(r4):'—'}</td><td data-label="8 недель">${sparkBars(u.weeks)}</td><td data-label="Пользователей" class="num">${u.users}</td><td data-label="Заблокировано" class="num">${b?`<span class="blk">${ic('shield-alert')}${b}</span>`:'0'}</td></tr>`}).join('')}
+        return `<tr><td><button type="button" class="code-link" data-act="open" data-id="${p.id}" data-tab="ai" title="${esc(p.name)}">${esc(p.code)}</button></td><td data-label="Модель" class="small">${esc(LLMS[p.ai.llm].split(' (')[0])}</td><td data-label="Запросов за месяц" class="num">${r4?nf(r4):'—'}</td><td data-label="2 месяца">${sparkBars(u.weeks)}</td><td data-label="Пользователей" class="num">${u.users}</td><td data-label="Заблокировано" class="num">${b?`<span class="blk">${ic('shield-alert')}${b}</span>`:'0'}</td></tr>`}).join('')}
     </tbody></table></div></div>
   </div>`;
 }
@@ -2026,10 +2133,10 @@ document.addEventListener('keydown',e=>{if(e.key==='Escape') hideTip()});
 addEventListener('scroll',hideTip,true);
 
 /* ========= Модальное окно ========= */
-function modal({title, body, ok='Готово', danger=false, onOk}){
+function modal({title, body, ok='Готово', danger=false, onOk, wide=false}){
   const prev=document.activeElement;
   const bg=document.createElement('div'); bg.className='modal-bg';
-  bg.innerHTML=`<div class="modal" role="dialog" aria-modal="true" aria-labelledby="mTitle"><h2 id="mTitle">${esc(title)}</h2><div class="m-b">${body}</div><div class="m-f"><button class="btn" data-m="cancel">Отмена</button><button class="btn ${danger?'red':'pri'}" data-m="ok">${esc(ok)}</button></div></div>`;
+  bg.innerHTML=`<div class="modal${wide?' wide':''}" role="dialog" aria-modal="true" aria-labelledby="mTitle"><h2 id="mTitle">${esc(title)}</h2><div class="m-b">${body}</div><div class="m-f"><button class="btn" data-m="cancel">Отмена</button><button class="btn ${danger?'red':'pri'}" data-m="ok">${esc(ok)}</button></div></div>`;
   document.body.appendChild(bg); enhanceSelects(bg); enhanceDates(bg);
   const close=()=>{ddClose(); bg.remove(); document.removeEventListener('keydown',key,true); prev?.focus?.()};
   const confirm=()=>{if(onOk&&onOk()===false) return; close()};
@@ -2069,7 +2176,7 @@ function countUp(){
 }
 function render(push){
   ddClose(); dpClose(); hideTip();
-  if(!ui.session){ $('#app').innerHTML=loginView(); enhanceSelects(); icons(); return }
+  if(!ui.session){ document.querySelectorAll('.modal-bg').forEach(x=>x.remove()); $('#app').innerHTML=loginView(); enhanceSelects(); icons(); return }
   const y=window.scrollY; $('#app').innerHTML=layout(); enhanceSelects(); enhanceDates(); icons(); window.scrollTo(0,y);
   if(ui.view==='wizard') wSyncErr();
   countUp();
@@ -2097,7 +2204,7 @@ addEventListener('hashchange',()=>{if(ui.session&&location.hash!==lastRoute&&app
 /* --- автосохранение мастера --- */
 function saveWiz(){try{ui.wiz?localStorage.setItem(KEY+'-wiz',JSON.stringify(ui.wiz)):localStorage.removeItem(KEY+'-wiz')}catch(_){}}
 function go(v){ui.view=v; ui.menu=false; if(v==='wizard'&&!ui.wiz) ui.wiz=newWiz(); window.scrollTo(0,0); render();}
-function applyModel(d,k){const m=CLIENT_MODELS[k]; d.model=k; d.clientInComms=m.clientInComms; d.commFormat=m.clientInComms?'bot':'channel'; d.ai.llm=m.llm; d.ai.isolation=m.isolation; d.ai.sources=m.clientInComms?['team','client','repo','kb']:['team','repo','kb'];}
+function applyModel(d,k){const m=CLIENT_MODELS[k]; d.model=k; d.clientInComms=m.clientInComms; d.commFormat=m.formats.includes('bot')?'bot':(m.formats[0]||'channel'); d.ai.llm=m.llm; d.ai.isolation=m.isolation; d.ai.sources=m.clientInComms?['team','client','repo','kb']:['team','repo','kb'];}
 const A={
   go:el=>go(el.dataset.v),
   menu:()=>{ui.menu=!ui.menu;render()},
@@ -2127,6 +2234,11 @@ const A={
   tkgrp:el=>{const ids=el.dataset.ids.split(','); const ts=S.tickets.filter(t=>ids.includes(t.id)); const ps=[...new Set(ts.map(t=>t.pid))]; const sn=snap(ps); ts.forEach(t=>{t.status='done'; t.assignee??=meAgent(); t.doneAt=Date.now()}); ps.forEach(pid=>checkReady(P(pid))); save(); render(); toast(`Выполнено ${ts.length} ${plural(ts.length,'заявка','заявки','заявок')}`, ()=>restore(sn))},
   tkall:el=>{const sn=snap([el.dataset.id]); projTickets(el.dataset.id).forEach(t=>t.status='done'); checkReady(P(el.dataset.id)); save(); render(); toast('Все заявки проекта закрыты', ()=>restore(sn))},
   print:()=>window.print(),
+  mdlEdit:el=>openModelEditor(el.dataset.id?S.models.find(m=>m.id===el.dataset.id):null),
+  mdlCopy:el=>openModelEditor(S.models.find(m=>m.id===el.dataset.id),true),
+  mdlDel:el=>{const m=S.models.find(x=>x.id===el.dataset.id); if(!m||modelUse(m.id)) return;
+    modal({title:`Удалить модель «${m.name}»?`, body:'<p>Модель исчезнет из мастера нового проекта. Проекты её не используют.</p>', ok:'Удалить', danger:true,
+      onOk:()=>{if(S.models.length<=1){toast('Нужна хотя бы одна модель'); return} S.models=S.models.filter(x=>x!==m); save(); render(); toast(`Модель «${m.name}» удалена`)}})},
   tooledit:el=>{const t=el.dataset.t?T(el.dataset.t):null;
     modal({title:t?`Изменить «${t.name}»`:'Новый инструмент', body:`<div class="stack">
       <div class="field"><label for="mTn">Название</label><input type="text" id="mTn" value="${esc(t?.name||'')}" placeholder="Например: Grafana"><span class="ferr" id="e-mTn"></span></div>
@@ -2329,6 +2441,7 @@ function setW(el){
 }
 try{S=JSON.parse(localStorage.getItem(KEY))}catch(e){}
 if(!S||!S.tools) S=seed();
+if(!S.models) S.models=defaultModels(); S.models.forEach(modelNorm);
 // миграция старых данных: единый термин «ИИ»
 S.tools.forEach(t=>t.name=t.name.replace(/^AI-/,'ИИ-')); S.roles.forEach(r=>r.method=r.method.replace(/AI-/g,'ИИ-'));
 S.roles.forEach(r=>{r.versions??=[{v:1,d:'2026-02-10',by:'Руководитель ЦК',ch:'Первая версия шаблона'}]; r.v??=r.versions.length});

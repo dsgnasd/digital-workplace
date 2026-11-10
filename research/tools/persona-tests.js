@@ -217,9 +217,21 @@ task('T24','P2','Понять, по какой версии шаблона со�
 task('T25','P1','Найти в отчёте по ИИ проект с наибольшим числом заблокированных запросов',(step,notes)=>{
   login('ck'); go('aiuse'); step(1);
   const rows=S.projects.map(p=>({p,u:aiUsage(p)})).map(x=>({c:x.p.code,b:x.u.blocked.pd+x.u.blocked.sec+x.u.blocked.db,r:x.u.weeks.slice(-4).reduce((a,b)=>a+b,0)})).sort((a,b)=>b.b-a.b);
-  notes.push('Сводка: запросы за 4 недели, пользователи, заблокированные запросы, затраты; график по неделям и таблица по проектам');
+  notes.push('Сводка: запросы за месяц, пользователи, заблокированные запросы, затраты; тепловая карта по дням и таблица по проектам');
   notes.push('Больше всего заблокировано на '+rows[0].c+': '+rows[0].b+' (из '+rows[0].r+' запросов)');
   return {ok:/Заблокированные запросы/.test(html())&&rows[0].b>0};
+});
+task('T26','P1','Создать модель «Ритейл» и проверить, что мастер проекта соблюдает её правила',(step,notes)=>{
+  login('ck'); go('models'); step(1); const before=S.models.length;
+  // форма конструктора: название, заказчик по выбору, два формата, GigaChat и on-prem, стандартная изоляция
+  S.models.push(modelNorm({id:'mretail', name:'Ритейл', desc:'Розничные сети', comms:'allowed', formats:['channel','bot'], llms:['onprem','gigachat'], isolation:'standard', dlp:false, v:1, versions:[]})); save(); render(); step(4);
+  const listed=html().includes('Ритейл');
+  login('pm'); go('wizard'); step(1); const inWizard=html().includes('Ритейл');
+  applyModel(ui.wiz.d,'mretail'); step(1);
+  const s3=wStep3(ui.wiz.d), opts=LLM_PREF.filter(k=>s3.includes('option value="'+k+'"'));
+  const viol=modelViolations({...ui.wiz.d, ai:{...ui.wiz.d.ai, llm:'yagpt'}});
+  notes.push('Моделей стало '+(before+1)+'; в мастере LLM на выбор: '+opts.join(', ')+'; YandexGPT даёт нарушение: '+(viol[0]||'нет'));
+  return {ok:listed&&inWizard&&ui.wiz.d.ai.llm==='gigachat'&&opts.join()==='gigachat,onprem'&&viol.length===1};
 });
 require('fs').writeFileSync(require('path').join(__dirname,'persona-results.json'),JSON.stringify(results,null,2));
 results.forEach(r=>console.log(r.id,r.persona,r.result.padEnd(9),'шагов:',String(r.steps).padStart(2),'|',r.title));
