@@ -233,6 +233,16 @@ task('T26','P1','Создать модель «Ритейл» и провери�
   notes.push('Моделей стало '+(before+1)+'; в мастере LLM на выбор: '+opts.join(', ')+'; YandexGPT даёт нарушение: '+(viol[0]||'нет'));
   return {ok:listed&&inWizard&&ui.wiz.d.ai.llm==='gigachat'&&opts.join()==='gigachat,onprem'&&viol.length===1};
 });
+task('T27','P1','Запретить GigaChat в модели «Корпоративный заказчик» и найти проекты, которые перестали ей соответствовать',(step,notes)=>{
+  login('ck'); go('models'); step(1);
+  const m=S.models.find(x=>x.id==='corp'); m.llms=m.llms.filter(k=>k!=='gigachat'); m.v=(m.v||1)+1; modelNorm(m); save(); render(); step(4);
+  const h=html(), off=S.projects.filter(p=>p.model==='corp'&&['provisioning','ready','active'].includes(p.status)&&modelViolations(p).length);
+  const inCard=h.includes('Не соответствуют текущим правилам')&&off.every(p=>h.includes('>'+p.code+'<'));
+  go('dashboard'); step(1); const inAttn=html().includes('расходится с правилами модели');
+  A.open({dataset:{id:off[0]?.id}}); go('project'); step(1); const badge=html().includes('есть v'+m.v);
+  notes.push('Затронуты: '+off.map(p=>p.code).join(', ')+'; в карточке модели: '+inCard+'; в «Требует внимания»: '+inAttn+'; в паспорте метка «есть v'+m.v+'»: '+badge);
+  return {ok:off.length>0&&inCard&&inAttn&&badge};
+});
 require('fs').writeFileSync(require('path').join(__dirname,'persona-results.json'),JSON.stringify(results,null,2));
 results.forEach(r=>console.log(r.id,r.persona,r.result.padEnd(9),'шагов:',String(r.steps).padStart(2),'|',r.title));
 `);

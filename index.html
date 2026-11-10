@@ -943,7 +943,7 @@ function seed(){
   roles.forEach(r=>{r.versions=(VH[r.id]||[['2026-02-10','Первая версия шаблона']]).map(([d,ch],i)=>({v:i+1,d,by:'Руководитель ЦК',ch})); r.v=r.versions.length});
   // по какой версии шаблона собраны идущие проекты (старые проекты — по прошлым версиям)
   const verAt=(rid,date)=>{const vs=roles.find(r=>r.id===rid).versions.filter(x=>x.d<=date); return vs.length?vs[vs.length-1].v:1};
-  projects.forEach(p=>{ if(['draft','pending','returned'].includes(p.status)) return; p.tplVer=Object.fromEntries(p.team.map(m=>[m.role,verAt(m.role,p.start)])) });
+  projects.forEach(p=>{ if(['draft','pending','returned'].includes(p.status)) return; p.tplVer=Object.fromEntries(p.team.map(m=>[m.role,verAt(m.role,p.start)])); p.modelV=1 });
   const s = {tools, roles, emps, projects, models:defaultModels(), tickets:[], seq:100};
   S = s; // справочники нужны генераторам заявок
   const H=36e5, now=Date.now();
@@ -1305,6 +1305,7 @@ function projTable(list){
 function attention(){
   const out=[], add=(ic_,t,id,late,tab)=>out.push({ic:ic_,t,id,late,tab});
   visibleProjects().forEach(p=>{
+    if(['provisioning','ready','active'].includes(p.status)&&(ui.role==='ck'||ui.role==='pm')){const v=modelViolations(p); if(v.length) add('scale',`«${p.name}» расходится с правилами модели: ${v[0].replace(/^./,c=>c.toLowerCase())}`,p.id,true)}
     if(ui.role==='pm'){
       if(p.status==='returned') add('undo-2',`«${p.name}» вернули на доработку`,p.id,true);
       (p.requests||[]).filter(q=>q.status==='pending').forEach(q=>add('key-round',`«${p.name}»: ${E(q.emp).name} просит доступ к «${T(q.tool).name}»`,p.id,false,'team'));
@@ -1403,7 +1404,8 @@ function pPassport(p){
     ['sparkles','Языковая модель','',lm?lm[1]:llm,lm?lm[2]:'',p.ai.llm!=='none'],
     ['shield-check','DLP',TIPS.dlp,m.dlp?'Обязателен':'Не требуется','Контроль утечек данных',m.dlp]];
   return `<div class="grid g2" style="align-items:start">
-    <div class="card"><div class="card-h"><h3>${ic('scale')}Правила модели «${esc(m.name)}»</h3></div>
+    <div class="card"><div class="card-h"><h3>${ic('scale')}Правила модели «${esc(m.name)}»</h3>${(()=>{const pv=p.modelV||m.v||1; return `<span class="badge b-vio" title="Версия модели, по которой утверждён проект">v${pv}</span>${pv<(m.v||1)?`<span class="badge b-warn" title="Модель обновилась после утверждения проекта">есть v${m.v}</span>`:''}`})()}</div>
+      ${(v=>v.length&&!['draft','closed'].includes(p.status)?`<div class="tpl-diff">${ic('triangle-alert')}<span>Проект не соответствует текущим правилам модели: ${esc(v.join('; '))}.</span></div>`:'')(modelViolations(p))}
       <ul class="rules">${rules.map(([i,l,t,v,sub,on])=>`<li><span class="ru-ic" aria-hidden="true">${ic(i)}</span><span class="ru-b"><span class="ru-l">${l}${t?tip(t):''}</span>${sub?`<span class="ru-s">${esc(sub[0].toUpperCase()+sub.slice(1))}</span>`:''}</span><span class="ru-v ${on?'on':''}">${esc(v)}</span></li>`).join('')}</ul></div>
     <div class="card"><div class="card-h"><h3>${ic('wrench')}Инструментарий проекта</h3></div><div class="card-b">
       ${Object.entries(byCat).map(([c,ts])=>`<div style="margin-bottom:8px"><div class="faint small">${TOOL_CATS[c]}</div>${ts.map(t=>`<span class="chip">${esc(T(t).name)}</span>`).join('')}</div>`).join('')||'<span class="muted">Команда не назначена</span>'}
@@ -1856,6 +1858,7 @@ function vModels(){
       <button type="button" class="btn sm ghost" data-act="mdlCopy" data-id="${m.id}" aria-label="Дублировать «${esc(m.name)}»" title="Дублировать">${ic('copy')}</button>
       <button type="button" class="btn sm ghost danger" data-act="mdlDel" data-id="${m.id}" ${u?'disabled title="Модель используется в проектах"':`title="Удалить"`} aria-label="Удалить «${esc(m.name)}»">${ic('trash-2')}</button></div>
       ${m.desc?`<p class="small muted mt-desc">${esc(m.desc)}</p>`:''}
+      ${(off=>off.length?`<div class="tpl-diff">${ic('triangle-alert')}<span>Не соответствуют текущим правилам: ${off.map(p=>`<button type="button" class="code-link" data-act="open" data-id="${p.id}" title="${esc(modelViolations(p).join('; '))}">${esc(p.code)}</button>`).join(' ')}. Проверьте при пересмотре доступов.</span></div>`:'')(S.projects.filter(p=>p.model===m.id&&['provisioning','ready','active'].includes(p.status)&&modelViolations(p).length))}
       <ul class="rules">${modelRules(m).map(([i,l,sub,v,on])=>`<li><span class="ru-ic" aria-hidden="true">${ic(i)}</span><span class="ru-b"><span class="ru-l">${l}</span><span class="ru-s">${esc(sub)}</span></span><span class="ru-v ${on?'on':''}">${esc(v)}</span></li>`).join('')}</ul>
       <div class="mt-foot small muted">${u?`Используется в ${u} ${plural(u,'проекте','проектах','проектах')}`:'Пока не используется'}${last?` · ${esc(last.ch)}, ${fmtD(last.d)}`:''}</div></div>`}).join('')}</div></div>`;
 }
@@ -2221,7 +2224,7 @@ const A={
     onOk:()=>{const cut=[...document.querySelectorAll('.modal .rv-i input:not(:checked)')].map(i=>({emp:i.dataset.emp,tool:i.dataset.tool}));
       cut.forEach(c=>{const m=p.team.find(x=>x.emp===c.emp); if(m) m.tools=m.tools.filter(t=>t!==c.tool)});
       const cutTxt=cut.map(c=>`${T(c.tool).name} у ${E(c.emp).name}`).join(', ');
-      p.tplVer=Object.fromEntries(p.team.map(m=>[m.role,R(m.role).v||1]));
+      p.tplVer=Object.fromEntries(p.team.map(m=>[m.role,R(m.role).v||1])); p.modelV=CLIENT_MODELS[p.model].v||1;
       p.status='provisioning'; const n=genTickets(S,p).length; p.history.push({d:today(),t:cut.length?`Утверждён руководителем ЦК с изменениями: убрано ${cutTxt}. Создано заявок: ${n}`:`Утверждён руководителем ЦК. Создано заявок: ${n}`});
       if(cut.length) notify('pm',`«${p.name}» утверждён с изменениями: убрано ${cutTxt}`,p.id,{user:p.pm,ic:'stamp',tab:'team'}); save(); notify('pm',`«${p.name}» утверждён, заявки ушли в сервис-деск`,p.id,{user:p.pm,ic:'stamp'}); notify('support',`Новые заявки по «${p.name}»: ${n}`,p.id,{ic:'ticket',tab:'tickets'}); p.team.forEach(m=>notify('emp',`Вас добавили в проект «${p.name}». Доступы выдаёт служба поддержки`,p.id,{user:m.emp,ic:'user-plus'}));
     toast(`Утверждено. В сервис-деск ушло ${n} ${plural(n,'заявка','заявки','заявок')}`); render()}})},
@@ -2442,6 +2445,7 @@ function setW(el){
 try{S=JSON.parse(localStorage.getItem(KEY))}catch(e){}
 if(!S||!S.tools) S=seed();
 if(!S.models) S.models=defaultModels(); S.models.forEach(modelNorm);
+S.projects.forEach(p=>{if(!['draft','pending','returned'].includes(p.status)) p.modelV??=1});
 // миграция старых данных: единый термин «ИИ»
 S.tools.forEach(t=>t.name=t.name.replace(/^AI-/,'ИИ-')); S.roles.forEach(r=>r.method=r.method.replace(/AI-/g,'ИИ-'));
 S.roles.forEach(r=>{r.versions??=[{v:1,d:'2026-02-10',by:'Руководитель ЦК',ch:'Первая версия шаблона'}]; r.v??=r.versions.length});
