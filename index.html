@@ -120,6 +120,11 @@ table{width:100%;border-collapse:collapse}
 th{font-size:13px;color:var(--muted);font-weight:500;text-align:left;padding:11px 16px;border-bottom:1px solid var(--line);background:var(--surface-2)}
 td{padding:13px 16px;border-bottom:1px solid var(--line);vertical-align:top}
 tr:last-child td{border-bottom:0}
+/* таблицы в карточке: шапка и строки не выходят за скруглённые углы */
+.tbl-wrap{overflow-x:auto}
+.card>.tbl-wrap:first-child{border-top-left-radius:calc(var(--r-m) - 1px);border-top-right-radius:calc(var(--r-m) - 1px)}
+.card>.tbl-wrap:last-child,.card>:last-child>.tbl-wrap:last-child{border-bottom-left-radius:calc(var(--r-m) - 1px);border-bottom-right-radius:calc(var(--r-m) - 1px)}
+th:has(.tip){white-space:nowrap}
 tr.click{cursor:pointer}tr.click:hover td{background:var(--surface-2)}
 tr.click:hover td:first-child b{text-decoration:underline;text-decoration-color:var(--line-strong);text-underline-offset:3px}
 
