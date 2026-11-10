@@ -1328,7 +1328,7 @@ const NAV={
   ck:[['dashboard','Обзор'],['approvals','На утверждение'],['projects','Проекты'],['people','Сотрудники'],['roles','Шаблоны ролей'],['models','Модели заказчиков'],['catalog','Каталог инструментов'],['aiuse','Использование ИИ'],['audit','Журнал аудита']],
   pm:[['dashboard','Обзор'],['projects','Мои проекты'],['wizard','Новый проект'],['roles','Шаблоны ролей']],
   support:[['desk','Сервис-деск'],['projects','Проекты'],['people','Сотрудники'],['audit','Журнал аудита'],['integrations','Интеграции']],
-  emp:[['my','Моё рабочее место'],['roles','Методология ролей']]
+  emp:[['my','Моё рабочее место']]
 };
 const ICONS={models:'scale',dashboard:'layout-dashboard',approvals:'stamp',roles:'layers',catalog:'library',projects:'folder-kanban',wizard:'square-plus',desk:'life-buoy',integrations:'plug',my:'user-round',project:'folder-kanban',people:'users',audit:'scroll-text',aiuse:'bot'};
 const TITLES={models:'Модели работы с заказчиком',dashboard:'Обзор',approvals:'Утверждение проектов',roles:'Шаблоны рабочих мест по ролям',catalog:'Каталог инструментов и доступов',projects:'Проекты',wizard:'Новый проект',desk:'Сервис-деск: заявки на рабочие места',integrations:'Интеграции',my:'Моё рабочее место',people:'Сотрудники',audit:'Журнал аудита',aiuse:'Использование ИИ'};
@@ -2117,7 +2117,7 @@ function vPeople(){
 }
 function vMy(){
   const e=E(ui.me); const ps=S.projects.filter(p=>p.team.some(m=>m.emp===ui.me)&&!['draft','pending','returned'].includes(p.status)).sort((a,b)=>(a.status==='closed')-(b.status==='closed'));
-  return `<div class="stack"><div class="row"><div class="avatar" style="width:44px;height:44px;font-size:15px">${initials(e.name)}</div><div><b style="font-size:16px">${esc(e.name)}</b><div class="muted">${esc(R(e.role).name)}, ${esc(R(e.role).ck)}</div></div></div>
+  return `<div class="stack"><div class="row"><div class="avatar" style="width:44px;height:44px;font-size:15px">${initials(e.name)}</div><div style="flex:1"><b style="font-size:16px">${esc(e.name)}</b><div class="muted">${esc(R(e.role).name)}, ${esc(R(e.role).ck)}</div></div><button type="button" class="btn sm ghost" data-act="mymethod">${ic('book-open')}Методология моей роли</button></div>
   ${ps.length?ps.map(p=>{const m=p.team.find(x=>x.emp===ui.me);return `<div class="card"><div class="card-h"><h3>${esc(p.name)}</h3>${badge(STATUS[p.status])}<div style="flex:1"></div><span class="small muted">${fmtD(p.start)} — ${fmtD(p.end)}</span></div><div class="card-b">
     <div class="my-pm">${ic('user-round')}<span>Руководитель проекта: <b>${esc(E(p.pm).name)}</b> · канал <span class="mono">#${esc(p.code.toLowerCase())}-team</span></span>${['provisioning','ready','active'].includes(p.status)?`<button class="btn sm" data-act="rqnew" data-id="${p.id}">${ic('key-round')}Запросить доступ</button>`:''}</div>
     ${myChecklist(p)}
@@ -2306,10 +2306,10 @@ document.addEventListener('keydown',e=>{if(e.key==='Escape') hideTip()});
 addEventListener('scroll',hideTip,true);
 
 /* ========= Модальное окно ========= */
-function modal({title, body, ok='Готово', danger=false, onOk, wide=false}){
+function modal({title, body, ok='Готово', danger=false, onOk, wide=false, info=false}){
   const prev=document.activeElement;
   const bg=document.createElement('div'); bg.className='modal-bg';
-  bg.innerHTML=`<div class="modal${wide?' wide':''}" role="dialog" aria-modal="true" aria-labelledby="mTitle"><h2 id="mTitle">${esc(title)}</h2><div class="m-b">${body}</div><div class="m-f"><button class="btn" data-m="cancel">Отмена</button><button class="btn ${danger?'red':'pri'}" data-m="ok">${esc(ok)}</button></div></div>`;
+  bg.innerHTML=`<div class="modal${wide?' wide':''}" role="dialog" aria-modal="true" aria-labelledby="mTitle"><h2 id="mTitle">${esc(title)}</h2><div class="m-b">${body}</div><div class="m-f">${info?'':'<button class="btn" data-m="cancel">Отмена</button>'}<button class="btn ${danger?'red':'pri'}" data-m="ok">${esc(ok)}</button></div></div>`;
   document.body.appendChild(bg); enhanceSelects(bg); enhanceDates(bg);
   const close=()=>{ddClose(); bg.remove(); document.removeEventListener('keydown',key,true); prev?.focus?.()};
   const confirm=()=>{if(onOk&&onOk()===false) return; close()};
@@ -2321,7 +2321,7 @@ function modal({title, body, ok='Готово', danger=false, onOk, wide=false})
   };
   document.addEventListener('keydown',key,true);
   bg.addEventListener('mousedown',e=>{if(e.target===bg) close()});
-  bg.querySelector('[data-m=cancel]').onclick=close;
+  const cb=bg.querySelector('[data-m=cancel]'); if(cb) cb.onclick=close;
   bg.querySelector('[data-m=ok]').onclick=confirm;
   icons();
   (bg.querySelector('textarea,input')||bg.querySelector('[data-m=ok]')).focus();
@@ -2410,7 +2410,7 @@ const A={
   mdlEdit:el=>openModelEditor(el.dataset.id?S.models.find(m=>m.id===el.dataset.id):null),
   mdlCopy:el=>openModelEditor(S.models.find(m=>m.id===el.dataset.id),true),
   mdlDel:el=>{const m=S.models.find(x=>x.id===el.dataset.id); if(!m) return; const used=modelRefs(m.id);
-    if(used.length) return modal({title:`Модель «${m.name}» нельзя удалить`, ok:'Понятно', body:`<p>Она используется в ${used.length} ${plural(used.length,'проекте','проектах','проектах')}: ${used.map(p=>esc(p.code)).join(', ')}.</p><p>Закрытые проекты тоже ссылаются на модель: по ней видна их история. Если модель больше не нужна новым проектам, оставьте её как есть или переименуйте, например «… (устарела)».</p>`});
+    if(used.length) return modal({title:`Модель «${m.name}» нельзя удалить`, ok:'Понятно', info:true, body:`<p>Она используется в ${used.length} ${plural(used.length,'проекте','проектах','проектах')}: ${used.map(p=>esc(p.code)).join(', ')}.</p><p>Закрытые проекты тоже ссылаются на модель: по ней видна их история. Если модель больше не нужна новым проектам, оставьте её как есть или переименуйте, например «… (устарела)».</p>`});
     modal({title:`Удалить модель «${m.name}»?`, body:'<p>Модель исчезнет из мастера нового проекта. Проекты её не используют. Удаление попадёт в журнал аудита.</p>', ok:'Удалить', danger:true,
       onOk:()=>{if(S.models.length<=1){toast('Нужна хотя бы одна модель'); return} S.models=S.models.filter(x=>x!==m); if(ui.wiz?.d?.model===m.id) applyModel(ui.wiz.d,S.models[0].id); (S.modelLog??=[]).push({at:Date.now(),d:today(),name:m.name,text:`Модель «${m.name}» удалена (последняя версия v${m.v||1})`}); save(); render(); toast(`Модель «${m.name}» удалена`)}})},
   mdlDrop:el=>{const m=S.models.find(x=>x.id===el.dataset.id); delete m.draft; save(); render(); toast('Черновик удалён')},
@@ -2486,6 +2486,7 @@ const A={
     modal({title:`Продлить «${p.name}»`, body:`<div class="field"><label for="mEnd">Новая дата окончания</label><input type="date" id="mEnd" min="${addDays(p.end,1)}" value="${addDays(p.end,30)}"><span class="hint">Сейчас доступы действуют до ${fmtD(p.end)}. После продления — до новой даты.</span><span class="ferr" id="e-mEnd"></span></div>`, ok:'Продлить',
       onOk:()=>{const v=$('#mEnd').value; if(!v||v<=p.end){$('#e-mEnd').textContent='Дата должна быть позже '+fmtD(p.end); return false}
         const old=p.end; p.end=v; p.history.push({d:today(),t:`Срок продлён: ${fmtD(old)} → ${fmtD(v)}. Доступы действуют до новой даты`}); save(); render(); toast(`Проект продлён до ${fmtD(v)}`)}})},
+  mymethod:()=>{const r=R(E(ui.me).role); modal({title:'Методология роли', ok:'Закрыть', info:true, body:`<p class="small muted">${esc(r.name)} · ${esc(r.ck)} · версия v${r.v||1}</p><div class="doc-box">${esc(r.method)}</div>`})},
   learn:el=>{const p=P(el.dataset.id), k=el.dataset.k, m=p.team.find(x=>x.emp===ui.me);
     const body=k==='method'?`<p class="small muted">${esc(R(m.role).name)} · ${esc(R(m.role).ck)}</p><div class="doc-box">${esc(R(m.role).method)}</div>`
       :`<p class="small muted">Правила проекта «${esc(p.name)}» для работы с данными заказчика</p><ol class="doc-box rules">${SEC_RULES(p).map(x=>`<li>${esc(x)}</li>`).join('')}</ol>`;
