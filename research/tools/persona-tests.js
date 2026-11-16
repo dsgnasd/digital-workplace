@@ -59,19 +59,6 @@ task('T4','P1','Сделать «ИИ-ассистент в IDE» опциона
   notes.push(/участник/.test(html())?'В карточке роли видно, на скольких проектах и у скольких участников она используется':'Использование роли не видно');
   return {ok:R('qa').opt.includes('aide')&&legend};
 });
-task('T5','P3','Найти просроченные по SLA заявки «Веги» и закрыть их',(step,notes)=>{
-  login('support'); go('desk'); step(1); A.showlate(); step(1);
-  const late=deskList(); const ids=S.tickets.filter(t=>slaInfo(t)?.c==='late');
-  notes.push('Кнопка «Показать просроченные» оставляет '+ids.length+' заявок, отсортированных по SLA');
-  ids.forEach(t=>{ if(t.status==='new'){A.tk({dataset:{id:t.id,s:'wip'}}); step(1)} A.tk({dataset:{id:t.id,s:'done'}}); step(1) });
-  return {ok:S.tickets.filter(t=>slaInfo(t)?.c==='late').length===0};
-});
-task('T6','P3','Исправить ошибочно закрытую заявку',(step,notes)=>{
-  login('support'); go('desk'); const t=S.tickets.find(x=>x.pid==='p2'&&x.status==='new'); const sn=snap(['p2']);
-  A.tk({dataset:{id:t.id,s:'wip'}}); step(1); A.tk({dataset:{id:t.id,s:'done'}}); step(1); restore(sn); step(1);
-  notes.push('Отмена доступна 7 секунд в уведомлении; после этого вернуть статус нельзя');
-  return {ok:t.status==='new'};
-});
 task('T7','P4','Убедиться, что готова к работе на «Орионе», и отметить обязательное',(step,notes)=>{
   login('emp'); go('my'); const r0=readiness(P('p1'),'e3'); QV['#mAck']={checked:true};
   r0.items.filter(i=>!i.ok&&!i.auto).forEach(i=>{A.learn({dataset:{id:'p1',k:i.k}}); step(3)});
@@ -116,7 +103,7 @@ task('T11','P2','Продлить «Гелиос» на месяц',(step,notes)
 task('T12','P2','Завершить «Гелиос» и убедиться, что доступы отозваны',(step,notes)=>{
   login('pm'); A.open({dataset:{id:'p7'}}); step(1); A.close({dataset:{id:'p7'}}); step(2);
   const n=projTickets('p7').filter(t=>t.op==='revoke'&&t.status!=='done').length;
-  A.logout(); login('support'); A.tkall({dataset:{id:'p7'}});
+  A.tksync({dataset:{id:'p7'}}); step(1); // статусы отзыва пришли из сервис-деска
   notes.push('Создано '+n+' заявок на отзыв и архив; закрытие после их выполнения');
   return {ok:P('p7').status==='closed'};
 });
@@ -142,17 +129,11 @@ task('T15','P2','Рассмотреть запрос доступа от сот�
   notes.push(block?'На вкладке «Команда и доступы» блок «Запросы доступа» с причиной':'Блока нет');
   return {ok:seen&&block&&!!t};
 });
-task('T16','P3','Задать вопрос по заявке и получить ответ руководителя проекта',(step,notes)=>{
-  login('support'); go('desk'); step(1); const t=projTickets('p2').find(x=>x.status==='new');
-  QV['#mQ']={value:'Нет свободной лицензии Postman — выдать из резерва?',focus(){}}; A.tq({dataset:{id:t.id}}); step(3);
-  const paused=slaInfo(t)?.t==='SLA на паузе';
-  A.logout(); login('pm'); const n=myNotifs().find(x=>x.text.includes(t.id)); step(1); // колокольчик
-  A.nopen({dataset:{nid:n.id}}); step(1); QV['#mA']={value:'Выдать из резерва',focus(){}}; A.ta({dataset:{id:t.id}}); step(3);
-  A.logout(); login('support'); const back=myNotifs().some(x=>x.text.startsWith('Ответ по заявке '+t.id));
-  notes.push(paused?'Пока вопрос открыт, SLA заявки на паузе':'SLA не на паузе');
-  notes.push(n?'Руководитель проекта получил уведомление, переход ведёт сразу на вкладку «Заявки»':'Уведомления нет');
-  notes.push(back?'Поддержка получила ответ уведомлением, заявка снова «В работе»':'Ответ не дошёл');
-  return {ok:paused&&!!n&&back&&t.status==='wip'};
+task('T16','P2','Ответить на вопрос сервис-деска по заявке',(step,notes)=>{
+  login('pm'); const t=projTickets('p2').find(x=>x.status==='question'); const n=myNotifs().find(x=>x.text.includes(t.id)); step(1); // колокольчик
+  A.nopen({dataset:{nid:n.id}}); step(1); QV['#mA']={value:'Выдать из резерва отдела дизайна',focus(){}}; A.ta({dataset:{id:t.id}}); step(3);
+  notes.push('Вопрос пришёл из сервис-деска, ответ ушёл обратно, заявка вернулась в работу');
+  return {ok:t.status!=='question'&&!!t.q.answer};
 });
 task('T17','P1','Добавить обязательный инструмент тестировщикам и применить к идущим проектам',(step,notes)=>{
   login('ck'); go('roles'); step(1); A.rtool({dataset:{r:'qa',t:'postman'}}); step(1);
@@ -170,14 +151,6 @@ task('T18','P2','Узнать, что проект утвердили, не за
   notes.push('Непрочитанных в колокольчике: '+unread.length+(got?', среди них «Полярис утверждён»':''));
   return {ok:got};
 });
-task('T19','P3','Взять заявку в работу и найти свои заявки',(step,notes)=>{
-  login('support'); go('desk'); step(1); const t=S.tickets.find(x=>x.pid==='p2'&&x.status==='new');
-  A.tk({dataset:{id:t.id,s:'wip'}}); step(1); ui.tf='mine'; step(2); const list=deskList(); go('desk');
-  const mine=S.tickets.filter(x=>x.assignee==='s1'&&x.status!=='done');
-  notes.push('Заявка закреплена за «Вы» (Игорь Нестеров); в фильтре «Мои заявки» '+mine.length+' шт.');
-  notes.push(list.includes('Вы</span>')?'В строке виден исполнитель':'Исполнитель не виден');
-  return {ok:t.assignee==='s1'&&list.includes(t.id)};
-});
 task('T20','P1','Утвердить «Полярис», убрав лишний опциональный доступ',(step,notes)=>{
   login('ck'); go('approvals'); step(1); QV.__all=[{dataset:{emp:'e2',tool:'idea'}}];
   // в окне утверждения снята одна галочка
@@ -193,12 +166,6 @@ task('T21','P5','Выгрузить журнал выдачи и отзыва д
   notes.push('Событий по проекту: '+rows.length+' (выдача '+gr+', отзыв '+rev+'), у каждого дата и исполнитель; кнопка «Выгрузить CSV»');
   notes.push('Отдельной роли ИБ нет — журнал смотрят руководитель ЦК и поддержка');
   return {ok:rows.length>0&&rev>0&&/Выгрузить CSV/.test(html())};
-});
-task('T22','P3','Открыть снова ошибочно выполненную заявку',(step,notes)=>{
-  login('support'); go('desk'); const t=projTickets('p3').find(x=>x.kind==='access'); ui.tf='all'; go('desk'); step(2);
-  QV['#mRe']={value:'Доступ выдан не в ту группу',focus(){}}; A.treopen({dataset:{id:t.id}}); step(3);
-  notes.push('Заявка снова «В работе», проект «Атлас» вернулся в «Настройку доступов», причина в истории и журнале');
-  return {ok:t.status==='wip'&&P('p3').status==='provisioning'&&P('p3').history.some(h=>h.t.includes('открыта повторно'))};
 });
 task('T23','P1','Добавить Grafana в каталог и сделать опциональной для DevOps',(step,notes)=>{
   login('ck'); go('catalog'); step(1); QV['#mTn']={value:'Grafana',focus(){}}; QV['#mTc']={value:'dev'}; QV['#mTg']={value:'devops'};

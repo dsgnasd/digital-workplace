@@ -383,7 +383,12 @@ fieldset.rv legend+*{clear:both}
 .login-card{width:min(560px,100%)}
 .login-card h2{font-size:24px;margin:0 0 6px}
 .login-card>p.muted{margin:0 0 20px}
-.role-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.role-grid{display:grid;grid-template-columns:1fr;gap:10px}
+.role-grid .role-card{display:grid;grid-template-columns:auto 1fr;column-gap:14px;row-gap:2px;align-items:center;padding:14px 44px 14px 16px}
+.role-grid .rc-ic{grid-row:1/3;margin:0}
+.role-grid .role-card b{grid-column:2}
+.role-grid .role-card .small{grid-column:2}
+.role-grid .rc-go{top:50%;margin-top:-9px}
 .role-card{display:flex;flex-direction:column;align-items:flex-start;gap:4px;text-align:left;font:inherit;color:inherit;padding:14px 16px;border:1px solid transparent;border-radius:var(--r-m);background:var(--surface);cursor:pointer;position:relative;box-shadow:0 1px 2px rgba(15,27,45,.06),0 2px 8px rgba(15,27,45,.04)}
 .role-card{transition:border-color .15s,box-shadow .15s,transform .15s}
 .role-card:hover,.role-card:focus-visible{border-color:color-mix(in srgb,var(--accent) 45%,transparent);box-shadow:0 6px 20px rgba(31,79,191,.12);transform:translateY(-1px)}
@@ -477,6 +482,8 @@ ol.doc-box.rules{padding-left:32px;display:grid;gap:6px}
 .np-d{font-size:12px;color:var(--muted)}
 .np-empty{padding:24px 14px;text-align:center;color:var(--muted);font-size:14px}
 /* --- вопрос по заявке --- */
+.tk-sync{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;padding:8px 8px 8px 14px;border-radius:var(--r-m);background:var(--surface-2);font-size:13.5px;color:var(--ink-2)}
+.tk-sync>span{display:flex;align-items:center;gap:8px}.tk-sync svg.lucide{width:15px;height:15px;color:var(--muted)}
 .tq{display:flex;gap:8px;align-items:flex-start;margin-top:6px;padding:8px 10px;border-radius:var(--r-s);background:var(--surface-2);border:0;font-size:13px;color:var(--ink-2)}
 .tq svg.lucide{width:15px;height:15px;color:var(--muted);flex:none;margin-top:2px}
 .trow .ta{gap:6px}
@@ -886,9 +893,8 @@ const A_STATUS = {new:{t:'Заявка отправлена', c:'b-grey'}, wip:{
 const C_STATUS = {new:{t:'Заявка отправлена', c:'b-grey'}, wip:{t:'В работе', c:'b-warn'}, done:{t:'Создан', c:'b-ok'}};
 const SHORT={vkt:'VK Teams',mail:'Почта',alt:'Трекер',conf:'База знаний',miro:'Miro',git:'GitLab',ci:'CI/CD',k8s:'Kubernetes',vscode:'VS Code',idea:'IDEA',pycharm:'PyCharm',dbeaver:'DBeaver',postman:'Postman',figma:'Figma',bpmn:'BPMN',testit:'Test IT',llm:'LLM',aide:'ИИ в IDE',vpn:'VPN',dlp:'DLP'};
 const ROLES_UI = {
-  ck:{t:'Руководитель ЦК', d:'Задаёт шаблоны рабочих мест для ролей, утверждает проекты'},
   pm:{t:'Руководитель проекта', d:'Создаёт проект и подбирает команду'},
-  support:{t:'Служба поддержки', d:'Исполняет заявки на доступы и каналы'},
+  ck:{t:'Руководитель ЦК', d:'Задаёт шаблоны рабочих мест для ролей, утверждает проекты'},
   emp:{t:'Сотрудник', d:'Видит своё рабочее место по проектам'}
 };
 
@@ -1292,12 +1298,11 @@ function checkReady(p){
 const DEMO_USERS={
   ck:{icon:'layers', d:'Шаблоны рабочих мест по ролям, утверждение проектов'},
   pm:{emp:'e6', icon:'folder-kanban', d:'Создание проектов, подбор команды, запуск и закрытие'},
-  support:{icon:'life-buoy', agent:'s1', d:'Заявки на доступы, каналы и ключи ИИ'},
   emp:{emp:'e3', icon:'user-round', d:'Своё рабочее место: доступы, каналы, чек-лист'}
 };
-// Инженеры поддержки (демо). Под ролью «Служба поддержки» входит s1.
+// Исполнители заявок в сервис-деске компании (демо)
 const AGENTS={s1:'Игорь Нестеров', s2:'Анна Лебедева', s3:'Олег Миронов'};
-const meAgent=()=>ui.role==='support'?DEMO_USERS.support.agent:null;
+const meAgent=()=>null; // заявки исполняются в сервис-деске компании, в портале своего исполнителя нет
 function sessName(){return ui.session?ROLES_UI[ui.session.role].t:''}
 function loginView(){
   return `<div class="login">
@@ -1322,9 +1327,8 @@ function loginView(){
 
 /* ========= Навигация ========= */
 const NAV={
-  ck:[['dashboard','Обзор'],['approvals','На утверждение'],['projects','Проекты'],['people','Сотрудники'],['roles','Шаблоны ролей'],['models','Модели заказчиков'],['catalog','Каталог инструментов'],['aiuse','Использование ИИ'],['audit','Журнал аудита']],
+  ck:[['dashboard','Обзор'],['approvals','На утверждение'],['projects','Проекты'],['people','Сотрудники'],['roles','Шаблоны ролей'],['models','Модели заказчиков'],['catalog','Каталог инструментов'],['aiuse','Использование ИИ'],['audit','Журнал аудита'],['integrations','Интеграции']],
   pm:[['dashboard','Обзор'],['projects','Мои проекты'],['wizard','Новый проект'],['roles','Шаблоны ролей']],
-  support:[['desk','Сервис-деск'],['projects','Проекты'],['people','Сотрудники'],['audit','Журнал аудита'],['integrations','Интеграции']],
   emp:[['my','Моё рабочее место']]
 };
 const ICONS={models:'scale',dashboard:'layout-dashboard',approvals:'stamp',roles:'layers',catalog:'library',projects:'folder-kanban',wizard:'square-plus',desk:'life-buoy',integrations:'plug',my:'user-round',project:'folder-kanban',people:'users',audit:'scroll-text',aiuse:'bot'};
@@ -1642,7 +1646,9 @@ function tGroup(g){
 function pTickets(p){
   const ts=projTickets(p.id);
   if(!ts.length) return `<div class="card empty">Заявки появятся, когда руководитель ЦК утвердит проект</div>`;
-  return `<div class="card">${ticketGroups(ts).map(x=>x.groups.map(tGroup).join('')).join('')}</div>`;
+  const open=ts.filter(t=>t.status!=='done'&&t.status!=='question'), can=isOwner(p)||ui.role==='ck';
+  return `<div class="stack">${open.length&&can?`<div class="tk-sync"><span>${ic('refresh-cw')}Статусы приходят из сервис-деска. Открыто: <b>${open.length}</b></span><button class="btn sm" data-act="tksync" data-id="${p.id}">Обновить статусы</button></div>`:''}
+  <div class="card">${ticketGroups(ts).map(x=>x.groups.map(tGroup).join('')).join('')}</div></div>`;
 }
 function pHistory(p){
   return `<div class="card card-b">${p.history.slice().reverse().map(h=>`<div class="row" style="padding:6px 0"><span class="mono faint">${fmtD(h.d)}</span><span>${esc(h.t)}</span></div>`).join('')}</div>`;
@@ -2402,6 +2408,10 @@ const A={
     const a=document.createElement('a'); a.href=URL.createObjectURL(new Blob([JSON.stringify(out,null,2)],{type:'application/json'})); a.download=`passport-${p.code}.json`; a.click()},
   tk:el=>{const t=S.tickets.find(x=>x.id===el.dataset.id); const sn=snap([t.pid]); t.status=el.dataset.s; t.assignee??=meAgent(); if(t.status==='done') t.doneAt=Date.now(); checkReady(P(t.pid)); save(); render(); toast(t.status==='done'?`Заявка ${t.id} выполнена`:`Заявка ${t.id} взята в работу`, ()=>restore(sn))},
   tkgrp:el=>{const ids=el.dataset.ids.split(','); const ts=S.tickets.filter(t=>ids.includes(t.id)); const ps=[...new Set(ts.map(t=>t.pid))]; const sn=snap(ps); ts.forEach(t=>{t.status='done'; t.assignee??=meAgent(); t.doneAt=Date.now()}); ps.forEach(pid=>checkReady(P(pid))); save(); render(); toast(`Выполнено ${ts.length} ${plural(ts.length,'заявка','заявки','заявок')}`, ()=>restore(sn))},
+  tksync:el=>{const p=P(el.dataset.id), sn=snap([p.id]), ag=Object.keys(AGENTS); let n=0;
+    projTickets(p.id).filter(t=>t.status!=='done'&&t.status!=='question').forEach((t,i)=>{t.status='done'; t.assignee??=ag[i%ag.length]; t.doneAt=Date.now(); n++});
+    const was=p.status; checkReady(p); save(); render();
+    toast(was!==p.status?`Сервис-деск выполнил ${n} ${plural(n,'заявку','заявки','заявок')} — проект «${STATUS[p.status].t}»`:`Выполнено заявок: ${n}`,()=>{restore(sn)})},
   tkall:el=>{const sn=snap([el.dataset.id]); projTickets(el.dataset.id).forEach(t=>t.status='done'); checkReady(P(el.dataset.id)); save(); render(); toast('Все заявки проекта закрыты', ()=>restore(sn))},
   print:()=>window.print(),
   mdlEdit:el=>openModelEditor(el.dataset.id?S.models.find(m=>m.id===el.dataset.id):null),
@@ -2641,6 +2651,7 @@ S.notifs??=[]; S.projects.forEach(p=>{ p.requests??=[]; if(!p.end){const d=parse
 S.tickets.forEach(t=>{t.op??='grant'; t.at??=Date.now()});
 try{const w=JSON.parse(localStorage.getItem(KEY+'-wiz')); if(w&&w.d){w.d.end??=''; ui.wiz=w}}catch(e){}
 try{ui.session=JSON.parse(localStorage.getItem(KEY+'-session'))}catch(e){}
+if(ui.session&&!ROLES_UI[ui.session.role]){ui.session=null; try{localStorage.removeItem(KEY+'-session')}catch(e){}}
 if(ui.session){ui.role=ui.session.role; if(ui.role==='emp') ui.me=ui.session.user}
 ui.lastRole=ui.session?.role||(()=>{try{return localStorage.getItem(KEY+'-role')}catch(e){}})()||'';
 if(ui.session&&!applyRoute()&&!NAV[ui.role].some(([x])=>x===ui.view)) ui.view=NAV[ui.role][0][0];
