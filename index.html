@@ -1694,10 +1694,9 @@ function wErrs(step,d){
   if(step===0){
     if(!d.name.trim()) e.name='Укажите название проекта';
     if(!d.code) e.code='Укажите код проекта';
-    else if(!/^[A-Z0-9]{3,8}$/.test(d.code)) e.code='Код — от 3 до 8 латинских букв или цифр';
+    else if(d.code.length<2) e.code='Код — хотя бы 2 символа';
     else if(S.projects.some(p=>p.code===d.code&&p.id!==ui.wiz?.editId)) e.code=`Код ${d.code} уже занят другим проектом`;
     if(!d.start) e.start='Выберите дату старта';
-    else if(d.start<today()&&!ui.wiz?.editId) e.start='Дата старта не может быть в прошлом';
     if(!d.end) e.end='Укажите дату окончания — до неё будут действовать доступы';
     else if(d.start&&d.end<=d.start) e.end='Окончание должно быть позже старта';
   }
@@ -1723,10 +1722,10 @@ function wErrAll(d){for(let i=0;i<4;i++){const e=wErr(i,d);if(e)return e}return'
 function wStep0(d){
   return `<div class="stack"><div class="grid g2">
     <div class="field"><label for="f-name">Название проекта${REQ}</label><input id="f-name" type="text" data-w="name" aria-required="true" value="${esc(d.name)}" placeholder="Например: Миграция CRM"><span class="ferr" id="e-name"></span></div>
-    <div class="field"><label for="f-code">Код проекта${REQ}</label><input id="f-code" type="text" data-w="code" data-hint="h-code" aria-required="true" value="${esc(d.code)}" placeholder="Например: CRM24" class="mono"><span class="hint" id="h-code">3–8 латинских букв или цифр. Попадёт в названия каналов, репозиториев и тег ИИ</span><span class="ferr" id="e-code"></span></div>
+    <div class="field"><label for="f-code">Код проекта${REQ}</label><input id="f-code" type="text" data-w="code" data-hint="h-code" aria-required="true" value="${esc(d.code)}" placeholder="Например: CRM24" class="mono"><span class="hint" id="h-code">Можно писать по-русски — переведём в латиницу. Попадёт в названия каналов, репозиториев и тег ИИ</span><span class="ferr" id="e-code"></span></div>
   </div>
   <div class="grid g3">
-    <div class="field"><label for="f-start">Дата старта${REQ}</label><input id="f-start" type="date" data-w="start" aria-required="true" min="${today()}" value="${esc(d.start)}"><span class="ferr" id="e-start"></span></div>
+    <div class="field"><label for="f-start">Дата старта${REQ}</label><input id="f-start" type="date" data-w="start" aria-required="true" value="${esc(d.start)}"><span class="ferr" id="e-start"></span></div>
     <div class="field"><label for="f-end">Дата окончания${REQ}${tip(TIPS.end)}</label><input id="f-end" type="date" data-w="end" aria-required="true" min="${d.start||today()}" value="${esc(d.end)}"><span class="ferr" id="e-end"></span></div>
     <div class="field"><label for="f-client">Заказчик</label><input id="f-client" type="text" data-w="client" value="${esc(d.client)}" placeholder="Например: ООО «Вектор»"></div>
   </div>
@@ -1741,7 +1740,7 @@ function wStep1(d){
   ${d.clientInComms?`<div class="field"><label for="f-fmt">Формат коммуникации с заказчиком</label><select id="f-fmt" data-w="commFormat">${Object.entries(COMM_FORMATS).filter(([k])=>fmts.includes(k)).map(([k,v])=>`<option value="${k}" ${d.commFormat===k?'selected':''}>${v}</option>`).join('')}</select></div>
   <div class="field"><label for="repIn">Представители заказчика${REQ}</label>
     <div>${d.clientReps.map((r,i)=>`<span class="chip">${esc(r)}<button type="button" class="chip-x" data-act="wrmrep" data-i="${i}" aria-label="Удалить: ${esc(r)}">${ic('x')}</button></span>`).join('')}</div>
-    <div class="row"><input type="text" id="repIn" placeholder="ФИО и роль, например: Иванов И., владелец продукта" style="flex:2;min-width:220px"><input type="text" id="repContact" aria-label="Контакт представителя" placeholder="Почта или @ник в VK Teams" style="flex:1;min-width:180px"><button class="btn" data-act="waddrep">${ic('plus')}Добавить</button></div><span class="ferr" id="e-repadd"></span><span class="ferr" id="e-reps"></span></div>`:''}
+    <div class="row"><input type="text" id="repIn" placeholder="ФИО и роль, например: Иванов И., владелец продукта" style="flex:2;min-width:220px"><input type="text" id="repContact" aria-label="Контакт представителя" placeholder="Контакт, если есть" style="flex:1;min-width:180px"><button class="btn" data-act="waddrep">${ic('plus')}Добавить</button></div><span class="ferr" id="e-repadd"></span><span class="ferr" id="e-reps"></span></div>`:''}
   <div class="field"><label>Каналы (формируются автоматически)</label>
     <div>${autoChannels(d).map(c=>`<span class="chip mono">#${esc(c.name)} ${c.type==='client'?'· заказчик':''}</span>`).join('')}</div></div>
   </div>`;
@@ -2553,9 +2552,9 @@ const A={
   wprev:()=>{ui.wiz.step--; ui.wiz.tried=-1; render()},
   wmodel:el=>{applyModel(ui.wiz.d, el.dataset.k); render()},
   waddrep:()=>{const v=$('#repIn').value.trim(), c=$('#repContact').value.trim(), er=$('#e-repadd');
-    const bad=!v?'Укажите ФИО и роль представителя':!c?'Укажите почту или ник в VK Teams — без контакта поддержка не сможет подключить представителя':!/^[^@\s]+@[^@\s]+\.[^@\s]+$|^@[\w.-]{2,}$/.test(c)?'Контакт: адрес почты (name@company.ru) или ник VK Teams (@name)':'';
+    const bad=!v&&!c?'Укажите представителя заказчика':'';
     if(bad){ if(er) er.textContent=bad; ($(!v?'#repIn':'#repContact'))?.focus(); return }
-    ui.wiz.d.clientReps.push(`${v} · ${c}`); render(); $('#repIn')?.focus()},
+    ui.wiz.d.clientReps.push([v,c].filter(Boolean).join(' · ')); render(); $('#repIn')?.focus()},
   wrmrep:el=>{ui.wiz.d.clientReps.splice(+el.dataset.i,1); render()},
   waddm:()=>{const emp=$('#empSel').value; const role=$('#roleSel').value||E(emp).role; ui.wiz.d.team.push({emp, role, tools:[...R(role).req]}); render()},
   wrmm:el=>{ui.wiz.d.team.splice(+el.dataset.i,1); render()},
@@ -2630,7 +2629,7 @@ function wInput(el){
 }
 function setW(el){
   const d=ui.wiz.d, k=el.dataset.w; let v=el.type==='checkbox'?el.checked:el.value;
-  if(k==='code') v=translit(v).replace(/[^A-Z0-9]/g,'').slice(0,8);
+  if(k==='code') v=translit(v).replace(/[^A-Z0-9]/g,'').slice(0,12);
   if(k.startsWith('ai.')) d.ai[k.slice(3)]=v; else d[k]=v;
   if(k==='clientInComms'&&v&&!d.ai.sources.includes('client')) d.ai.sources.push('client');
   if(k==='ai.llm'&&v==='none'&&d.commFormat==='bot') d.commFormat='channel';
