@@ -685,6 +685,21 @@ aside .demo .demo-b{color:var(--side-mute);flex-direction:column;align-items:fle
 .apr:has(.apr-viol) .apr-foot{border-radius:0}
 @media (max-width:900px){.apr-facts{grid-template-columns:1fr 1fr}}
 @media (max-width:520px){.apr-a{width:100%}.apr-a .btn.pri{margin-left:auto}}
+.rv-h{display:flex;align-items:baseline;gap:10px;flex-wrap:wrap}
+.rv-h h3{margin:0;font-size:18px}
+.rv-facts{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:16px;margin:16px 0 0}
+.rv-facts dt{font-size:12.5px;color:var(--muted);margin-bottom:3px}
+.rv-facts dd{margin:0;font-size:14.5px;font-weight:500;color:var(--ink)}
+.rv-facts dd small{display:block;font-size:12.5px;font-weight:400;color:var(--muted);margin-top:2px}
+.rv-sec{margin-top:16px;padding-top:14px;border-top:1px solid var(--line)}
+.rv-sec h4{margin:0 0 8px;font:600 13px/1.3 var(--ui);color:var(--muted)}
+.rv-team{display:grid;gap:0}
+.rv-team>div{display:grid;grid-template-columns:220px minmax(0,1fr);gap:16px;padding:7px 0;font-size:14px;border-bottom:1px dashed var(--line)}
+.rv-team>div:last-child{border-bottom:0}
+.rv-team>div>span:first-child{display:flex;justify-content:space-between;gap:8px;color:var(--ink-2)}
+.rv-team b{font-weight:600;color:var(--ink)}
+.rv-team>div>span:last-child{color:var(--ink)}
+@media (max-width:900px){.rv-facts{grid-template-columns:1fr 1fr}.rv-team>div{grid-template-columns:1fr;gap:2px}}
 .approve-sum{margin-top:14px;border:0;border-radius:var(--r-m);background:var(--surface-2);font-size:14px;color:var(--ink-2);overflow:hidden}
 .as-h{display:flex;align-items:center;gap:10px;padding:12px 14px 4px;color:var(--ink);font-weight:500}
 .as-h span{flex:1}
@@ -1772,21 +1787,20 @@ function wStep3(d){
   </div>`;
 }
 function wStep4(d){
-  const p={...d, id:'preview', status:'draft', history:[], pm:'e6', channels:autoChannels(d)};
-  const tmp={seq:0,tickets:[]}; const ts=genTickets(tmp,p);
-  const byG={}; ts.forEach(t=>byG[t.group]=(byG[t.group]||0)+1);
-  return `<div class="stack"><div class="grid g2">
-    <div><h3 style="margin-top:0">${esc(d.name)} <span class="mono faint">${esc(d.code)}</span></h3><dl class="kv">
-      <dt>Заказчик</dt><dd>${esc(d.client||'—')} · ${esc(CLIENT_MODELS[d.model].name)}</dd>
-      <dt>Срок</dt><dd>${fmtD(d.start)} — ${fmtD(d.end)}<div class="small muted">Доступы команды будут действовать до ${fmtD(d.end)}</div></dd>
-      <dt>Каналы</dt><dd class="mono">${p.channels.map(c=>'#'+esc(c.name)).join(', ')}</dd>
-      <dt>Команда</dt><dd>${d.team.map(m=>esc(E(m.emp).name)+' ('+esc(R(m.role).name)+')').join('<br>')}</dd>
-      <dt>LLM</dt><dd>${esc(LLMS[d.ai.llm])}</dd>
-    </dl></div>
-    <div><h3 style="margin-top:0">После утверждения будет создано ${ts.length} заявок</h3>
-      ${Object.entries(byG).map(([g,n])=>`<div class="row between" style="padding:6px 0;border-bottom:1px solid var(--line)"><span>${esc(GROUPS[g])}</span><b>${n}</b></div>`).join('')}
-    </div></div>
-    ${wErrAll(d)?`<div class="callout warn">${esc(wErrAll(d))}</div>`:''}</div>`;
+  const p={...d, id:'preview', status:'draft', history:[], pm:'e6', channels:autoChannels(d)}, m=CLIENT_MODELS[d.model], n=d.team.length;
+  const byRole={}; d.team.forEach(t=>(byRole[t.role]??=[]).push(E(t.emp).name));
+  return `<div class="rv">
+    <div class="rv-h"><h3>${esc(d.name||'Без названия')}</h3><span class="mono faint">${esc(d.code)}</span></div>
+    <dl class="rv-facts">
+      <div><dt>Заказчик</dt><dd>${esc(d.client||'—')}<small>${esc(m.name)}</small></dd></div>
+      <div><dt>Срок</dt><dd>${fmtD(d.start)} — ${fmtD(d.end)}<small>до конца срока действуют доступы</small></dd></div>
+      <div><dt>Команда</dt><dd>${n} ${plural(n,'человек','человека','человек')}<small>${Object.keys(byRole).length} ${plural(Object.keys(byRole).length,'роль','роли','ролей')}</small></dd></div>
+      <div><dt>ИИ</dt><dd>${esc(llmShort(d.ai.llm))}<small>изоляция: ${ISOLATION[d.ai.isolation].split(' — ')[0].toLowerCase()}</small></dd></div>
+    </dl>
+    <div class="rv-sec"><h4>Команда по ролям</h4><div class="rv-team">${Object.entries(byRole).map(([r,ns])=>`<div><span>${esc(R(r).name)}<b>${ns.length}</b></span><span>${ns.map(esc).join(', ')}</span></div>`).join('')||'<span class="muted">Команда пока пустая</span>'}</div></div>
+    <div class="rv-sec"><h4>Каналы</h4><div>${p.channels.map(c=>`<span class="chip mono">#${esc(c.name)}</span>`).join('')}${d.clientInComms&&d.commFormat==='email'?'<span class="chip">рассылка для заказчика</span>':''}</div></div>
+    ${approveSummary(p)}
+    ${wErrAll(d)?`<div class="callout warn" style="margin-top:14px">${esc(wErrAll(d))}</div>`:''}</div>`;
 }
 function wizToProject(){
   const d=ui.wiz.d;
